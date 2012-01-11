@@ -765,7 +765,7 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
   # current working directory, when not specified
   if { $working_area == "" } { set working_area [pwd] }
   if { $staging_area == "" } { set staging_area [pwd] }
-  set copy_option absremote
+  set copy_option relative
   set import_files { 
       "6502_sync.vhd" 
       "ClkUnit.sym" 
@@ -1354,6 +1354,7 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "B" "" "" "" "PROP_ModelSimSimRunTime_tbw" "1000ns" 
       "B" "" "" "" "PROP_ModelSimSourceWin" "false" 
       "B" "" "" "" "PROP_ModelSimStructWin" "true" 
+      "B" "" "" "" "PROP_ModelSimUutInstName_postFit" "UUT" 
       "B" "" "" "" "PROP_ModelSimUutInstName_postMap" "UUT" 
       "B" "" "" "" "PROP_ModelSimUutInstName_postPar" "UUT" 
       "B" "" "" "" "PROP_ModelSimVarsWin" "false" 
@@ -1532,7 +1533,7 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
      $opts_stream WriteString "2"
      $opts_stream WriteString "0"
      $opts_stream WriteString "0"
-     $opts_stream WriteString "2"
+     $opts_stream WriteString "1"
    RestoreSourceControlOptions "$project_file" $opts_stream
    Release $opts_stream
   if { $srcctrl_comp != 0 } {

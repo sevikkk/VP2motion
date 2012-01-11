@@ -64,3 +64,6 @@ rtl/vp2/vp2.restore
 rtl/vp2/xaw2verilog.log
 drivers/usb-driver/libusb-driver-DEBUG.so
 drivers/usb-driver/libusb-driver.so
+rtl/vp2/top_guide.ncd
+rtl/vp2/vp2.ise
+
