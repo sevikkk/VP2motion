@@ -1,0 +1,149 @@
+module selectmap
+	( 
+	input clk,
+	input reset,
+	input b_reset_ext,
+	
+	input [15:0] flash_d,
+	output reg [21:0] flash_addr,
+	output reg flash_cs,
+	
+	input v_init,
+	input v_done,
+	input v_busy,
+	
+	output reg v_cclk,
+	output reg v_prog,
+	output [2:0] v_m,
+	output reg [0:7] v_d,
+	output reg v_cs,
+	output reg v_rdwr,
+	
+	output reg cfg_done,
+	output reg cfg_error
+);
+
+assign v_m[2:0] = 3'b110;
+
+reg [3:0] state;
+reg [9:0] cnt;
+reg [7:0] data_reg;
+reg b_reset;
+
+parameter RESET = 0, PROG = 1, WAIT_INIT = 2, BYTE_0 = 3, BYTE_1 = 4, BYTE_2 = 5, BYTE_3 = 6, KEEP_CLK_0 = 7, KEEP_CLK_1 = 8, DONE = 9, ERROR = 10;
+
+always @(posedge clk)
+	begin
+		v_cclk <= 1;
+		v_prog <= 1;
+		v_cs <= 1;
+		v_rdwr <= 1;
+		flash_cs <= 1;
+		cfg_done <= 0;
+		cfg_error <= 0;
+		b_reset <= b_reset_ext;
+		if (reset)
+			begin
+				state <= RESET;
+				cnt <= 0;
+				flash_addr <= 0;
+				data_reg <= 0;
+				v_d <= 0;
+			end
+		else
+			begin
+				case (state)
+					RESET: begin
+						cnt <= 1000;
+						data_reg <= 0;
+						v_d <= 0;
+						v_prog <= 0;
+						state <= PROG;
+					end
+					PROG: begin
+						if (b_reset)
+							begin
+								flash_addr <= 22'h210000;
+							end
+						else
+							begin
+								flash_addr <= 22'h10000;
+							end
+						cnt <= cnt - 1;
+						v_prog <= 0;
+						if (cnt == 0)
+							begin
+								state <= WAIT_INIT;
+							end
+					end
+					WAIT_INIT: begin
+						flash_cs <= 0;
+						if (v_init == 1)
+							begin
+								state <= BYTE_0;
+							end
+					end
+					BYTE_0: begin
+						flash_cs <= 0;
+						v_cs <= 0;
+						v_rdwr <= 0;
+						v_cclk <= 0;
+						state <= BYTE_1;
+						data_reg <= flash_d[15:8];
+						v_d[0:7] <= flash_d[7:0];
+						flash_addr <= flash_addr + 1;
+					end
+					BYTE_1: begin
+						flash_cs <= 0;
+						v_cs <= 0;
+						v_rdwr <= 0;
+						v_cclk <= 1;
+						state <= BYTE_2;
+					end
+					BYTE_2: begin
+						flash_cs <= 0;
+						v_cs <= 0;
+						v_rdwr <= 0;
+						v_cclk <= 0;
+						v_d[0:7] <= data_reg[7:0];
+						state <= BYTE_3;
+					end
+					BYTE_3: begin
+						flash_cs <= 0;
+						v_cs <= 0;
+						v_rdwr <= 0;
+						v_cclk <= 1;
+						state <= BYTE_0;
+						if (v_init == 0)
+							begin
+								state <= ERROR;
+							end
+						if (v_done == 1)
+							begin
+								state <= KEEP_CLK_0;
+								cnt <= 15;
+							end
+					end
+					KEEP_CLK_0: begin
+						v_cclk <= 0;
+						state <= KEEP_CLK_1;
+					end
+					KEEP_CLK_1: begin
+						v_cclk <= 1;
+						state <= KEEP_CLK_0;
+						cnt <= cnt - 1;
+						if (cnt == 0)
+							state <= DONE;
+					end
+					ERROR: begin
+						cfg_error <= 1;
+					end
+					DONE: begin
+						cfg_done <= 1;
+					end
+				endcase
+			end
+	end
+	
+
+endmodule

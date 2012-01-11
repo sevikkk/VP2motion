@@ -1,0 +1,9 @@
+LPM_DIRECTION=LEFT
+LPM_TYPE=LPM_SHIFTREG
+LPM_WIDTH=141
+DEVICE_FAMILY="MAX II"
+clock
+data
+enable
+load
+shiftout

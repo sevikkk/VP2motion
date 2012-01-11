@@ -1,0 +1,340 @@
+-----------------
+z
+a
+b
+c
+d
+
+--------------------- p2 ----------------------------
+z01
+z02
+z03
+z04
+z05
+z06
+z07
+z08
+z09
+z10
+z11
+z12
+z13
+z14
+z15
+z16
+z17
+z18
+z19
+z20
+z21
+z22
+z23
+z24
+z25
+z26
+z27
+z28
+z29
+z30
+z31
+z32
+
+a01   E13
+a02   K14
+a03   J14
+a04   D9
+a05   C9
+a06   H13             U33
+a07   G13
+a08   K12
+a09   J12
+a10   D5
+a11   D6
+a12   F9
+a13   E9
+a14   K11
+a15   J11
+a16   J10
+a17   K16
+a18   C13
+a19   C14
+a20   F14
+a21   E14
+a22   K15
+a23   J15
+a24   D11
+a25   C11              U40
+a26   D13
+a27   D12
+a28   H14
+a29   G14
+a30   E10
+a31   D10
+a32   F13
+  
+b01   
+b02
+b03
+b04    J8
+b05    J7
+b06    F5
+b07    F4
+b08    G4
+b09    G3
+b10    G6
+b11    G5
+b12
+b13    
+b14    L3
+b15    M4
+b16    M3
+b17    P10
+b18    P9
+b19    N6
+b20    N5
+b21    M1
+b22
+b23    N1
+b24    P8
+b25    P7
+b26    N4
+b27    N3
+b28    N2
+b29    P2
+b30    R10
+b31
+b32
+
+c01    T5
+c02    T4
+c03    T3
+c04    U10
+c05    U9
+c06    U6
+c07    U5
+c08    U2
+c09    V2
+c10    U8
+c11    U7
+c12    U4
+c13    U3
+c14    G9
+c15    H9      U32
+c16    G10
+c17    P3
+c18    T11
+c19    U11
+c20    R7
+c21    R6
+c22    P1
+c23    R1
+c24    T10
+c25    T9
+c26    R4
+c27    R3
+c28    R2       U37
+c29    T2
+c30    T8
+c31    T7
+c32    T6
+
+d01    
+d02
+d03
+d04
+d05
+d06
+d07
+d08
+d09
+d10
+d11
+d12
+d13
+d14
+d15
+d16
+d17
+d18
+d19
+d20
+d21
+d22
+d23
+d24
+d25
+d26
+d27
+d28
+d29
+d30
+d31
+d32
+
+---------------- P1 -------------------------
+
+z01
+z02
+z03
+z04
+z05
+z06
+z07
+z08
+z09
+z10
+z11
+z12
+z13
+z14
+z15
+z16
+z17
+z18
+z19
+z20
+z21
+z22
+z23
+z24
+z25
+z26
+z27
+z28
+z29
+z30
+z31
+z32
+
+a01   F1      D00
+a02   L10
+a03   L9
+a04   H6
+a05   H5
+a06   G2
+a07   G1
+a08   J6      D08
+a09   ??
+a10   ??      SYSCLK*
+a11   ??
+a12   AA2     DS1       U7
+a13   AB2     DS0       U7
+a14   W9      WRITE     U7
+a15   ??
+a16   ??      DTACK*    u16-4 AA4 u16-8 max?
+a17   ??
+a18   W10     AS       U7
+a19   ??
+a20   Y9      IACK     U7
+a21   AA6     IACKIN   U7
+a22   ??      IACKOUT* U16-6    AA5
+a23   Y7      AM4      U7       snd
+a24   W4      A07
+a25   W3
+a26   AA1
+a27   Y1
+a28   W11
+a29   V11
+a30   W6A     A01
+a31   ??
+a32   ??
+  
+b01   ??      BBSY
+b02   ??
+b03   ??
+b04   ??
+b05   ??
+b06   ??
+b07   ??
+b08   ??
+b09   ??
+b10   ??
+b11   ??
+b12   ??
+b13   ??  
+b14   ??
+b15   ??
+b16   Y4        AM0     U7
+b17   Y3        AM1     U7
+b18   W8        AM2     U7
+b19   W7        AM3     U7
+b20   ??
+b21   ??
+b22   ??
+b23   ??
+b24   ??        IRQ7   u16-2     AB4
+b25   ??        IRQ6   u17-12    AB3
+b26   ??        IRQ5   u17-10    AA8    leds_power
+b27   ??        IRQ4   u17-8     AA7    m2b
+b28   ??        IRQ3   u17-6     AB6    m2a
+b29   ??        IRQ2   u17-4     AD2    m1b
+b30   ??        IRQ1   u17-2     AC2    m1a
+b31   ??
+b32   ??
+   
+c01   J5     D08
+c02   J4
+c03   J3
+c04   K8
+c05   K7
+c06   H4
+c07   H3
+c08   H2     D15
+c09   ??     gnd
+c10   ??     sysfail
+c11   AA3    berr       U7   SD_CS
+c12   ??     sysreset
+c13   AC1    lword      U7   SD_DI
+c14   Y6     AM5        U7   SD_CK
+c15   E1     A23             SD_DO
+c16   E2
+c17   E3
+c18   E4
+c19   F7
+c20   F8
+c21   V4
+c22   V3
+c23   V8
+c24   V7
+c25   V6            sensor_ir
+c26   V5            sensor_front_wheel
+c27   Y2            sensor_bump2
+c28   W2            sensor_bump1
+c29   V10           sensor_wheel2
+c30   V9     A08    sensor_wheel1
+c31   ??
+c32   ??
+   
+d01    
+d02
+d03
+d04
+d05
+d06
+d07
+d08
+d09
+d10
+d11
+d12
+d13
+d14
+d15
+d16
+d17
+d18
+d19
+d20
+d21
+d22
+d23
+d24
+d25
+d26
+d27
+d28
+d29
+d30
+d31
+d32
+

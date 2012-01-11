@@ -1,0 +1,35 @@
+      1      2      3      4      5      6      7      8   *    9     10     11     12     13     14     15     16
+T    GND    F_A12  VCC    F_A14  F_A16  F_A20  F_A24 u3-17 *  u3-19  u3-23 u22-23  u22-2   u3-11  VCC   u22-13  GND
+                                                           *
+R    F_A10  GND    F_A9   F_A13  F_A19  F_A18  F_A22 u3-14 *  u3-20    -   u15-3     -    u22-3  u22-14  GND   u22-16
+                                                           *
+P    VCC    F_A8   TCK    F_A11  F_A17  F_A21  F_A23 u3-13 *  u3-16   u3-22   -    u15-2   u3-12 u22-17   -     VCC
+                                                           *
+N    F_A6   F_A5   F_A7   TMS    F_A15   -      -      -   *    -      -      -      -    F_DQ13 F_DQ14 F_DQ12   -
+                                                           *
+M    F_A4   u22-12 F_A1   F_A3   TDO     -      -      -   *  B_RESET  -      -      -    u15-11 u15-13 F_DQ15 u15-9
+                                                           *
+L    F_A0   F_A2   F_CE1  F_BYTE  -     TDI     -     VCC  *   VCC     -      -      -    u15-16 u15-19 u15-12 u15-14
+                                                           *
+K    F_CE2  u22-11 F_WE    -      -      -     GND    GND  *   GND    GND     -      -      -    u15-22 u15-17 u15-20
+                                                           *
+J    F_OE   F_CE0 F_VPEN   -      -     VCC    VCC    GND  *   VCC    GND    VCC     -      -      -    u15-23   -
+                                                           *
+*******************************************************************************************************************
+                                                           *
+H    F_RP   u22-8  F_STS   -      -     VCC    GND    VCC  *   GND    VCC    VCC     -      -     u7-2   u7-6   u7-3
+                                                           *
+G    u22-9  F_DQ1  u22-6   -      -      -     GND    GND  *   GND    GND     -      -      -     u7-5    -     u7-9
+                                                           *
+F    F_DQ3  F_DQ5  F_DQ0   -      -      -      -     VCC  *   VCC     -      -      -      -     u7-8   u7-17 u16-2
+                                                           *
+E    F_DQ7  F_DQ2  F_DQ4  F_DQ6   -      -      -      -   *    -      -      -      -      -     u7-14  u7-23  u7-20
+                                                           *
+D    F_DQ8  u22-5  F_DQ9  u3-5    -      -      -      -   *    -      -    u22-20  u3-3  u7-22  u7-19 B_DX_OE B_DX_DIR
+                                                           *
+C    VCC    F_DQ10 F_DQ11  -     V_D4   V_CS   u3-9   V_D2 *  u15-8  u15-5  V_DOUT  V_M1  B_LED7   -      -     VCC
+                                                           *
+B    V_D6   GND    V_D7    -    V_DONE   -     V_D5 V_RDWR *   V_D1  u15-6  u22-19  V_M2   u3-2    -     GND     -
+                                                           *
+A    GND    u3-6   VCC     -    V_CCLK   -    V_INIT V_DIN *   u3-8   V_D3  u22-22 V_PROG  V_M0   VCC   B_LED6  GND
+

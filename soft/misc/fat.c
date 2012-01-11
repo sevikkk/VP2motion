@@ -1,0 +1,248 @@
+#include <sys/types.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <string.h>
+#include "fat.h"
+
+#define DOSBBSECTOR     0	/* DOS boot block relative sector number */
+#define DOSPARTOFF      446
+#define DOSPARTSIZE     16
+#define NDOSPART        4
+#define NEXTDOSPART     32
+#define DOSMAGICOFFSET  510
+#define DOSMAGIC        0xAA55
+
+struct dos_partition {
+	uint8_t	dp_flag;	/* bootstrap flags */
+	uint8_t	dp_shd;		/* starting head */
+	uint8_t	dp_ssect;	/* starting sector */
+	uint8_t	dp_scyl;	/* starting cylinder */
+	uint8_t	dp_typ;		/* partition type */
+	uint8_t	dp_ehd;		/* end head */
+	uint8_t	dp_esect;	/* end sector */
+	uint8_t	dp_ecyl;	/* end cylinder */
+	uint8_t	dp_start[4];	/* absolute starting sector number */
+	uint8_t	dp_size[4];	/* partition size in sectors */
+};
+
+struct bootsector {
+	uint8_t	bsJump [3];		/* jump inst E9xxxx or EBxx90 */
+	uint8_t	bsOemName[8];		/* OEM name and version */
+	uint8_t	bpbBytesPerSec[2];	/* bytes per sector */
+	uint8_t	bpbSecPerClust;		/* sectors per cluster */
+	uint8_t	bpbResSectors[2];	/* number of reserved sectors */
+	uint8_t	bpbFATs;		/* number of FATs */
+	uint8_t	bpbRootDirEnts[2];	/* number of root directory entries */
+	uint8_t	bpbSectors[2];		/* total number of sectors */
+	uint8_t	bpbMedia;		/* media descriptor */
+	uint8_t	bpbFATsecs[2];		/* number of sectors per FAT */
+	uint8_t	bpbSecPerTrack[2];	/* sectors per track */
+	uint8_t	bpbHeads[2];		/* number of heads */
+	uint8_t	bpbHiddenSecs[4];	/* number of hidden sectors */
+	uint8_t	bpbHugeSectors[4];	/* # of sectors if bpbSectors == 0 */
+	uint8_t	bsExt   [26];		/* Bootsector Extension */
+	uint8_t	bsBootCode[448];	/* pad so structure is 512b */
+	uint8_t	bsBootSectSig0;
+	uint8_t	bsBootSectSig1;
+#define BOOTSIG0        0x55
+#define BOOTSIG1        0xaa
+};
+
+struct direntry {
+	uint8_t	deName [8];	/* filename, blank filled */
+#define SLOT_EMPTY      0x00		/* slot has never been used */
+#define SLOT_E5         0x05		/* the real value is 0xe5 */
+#define SLOT_DELETED    0xe5		/* file in this slot deleted */
+	uint8_t	deExtension[3];	/* extension, blank filled */
+	uint8_t	deAttributes;	/* file attributes */
+#define ATTR_NORMAL     0x00		/* normal file */
+#define ATTR_READONLY   0x01		/* file is readonly */
+#define ATTR_HIDDEN     0x02		/* file is hidden */
+#define ATTR_SYSTEM     0x04		/* file is a system file */
+#define ATTR_VOLUME     0x08		/* entry is a volume label */
+#define ATTR_DIRECTORY  0x10		/* entry is a directory name */
+#define ATTR_ARCHIVE    0x20		/* file is new or modified */
+	uint8_t	deLowerCase;	/* NT VFAT lower case flags */
+#define LCASE_BASE      0x08		/* filename base in lower case */
+#define LCASE_EXT       0x10		/* filename extension in lower case */
+	uint8_t	deCHundredth;	/* hundredth of seconds in CTime */
+	uint8_t	deCTime[2];	/* create time */
+	uint8_t	deCDate[2];	/* create date */
+	uint8_t	deADate[2];	/* access date */
+	uint8_t	deHighClust[2];	/* high bytes of cluster number */
+	uint8_t	deMTime[2];	/* last update time */
+	uint8_t	deMDate[2];	/* last update date */
+	uint8_t	deStartCluster[2];	/* starting cluster of file */
+	uint8_t	deFileSize[4];	/* size of file in bytes */
+};
+
+#define dos_partition(n) 	((struct dos_partition *)(buf+DOSPARTOFF + (n)*DOSPARTSIZE))
+#define bootsector 		((struct bootsector *)buf)
+#define direntry(n)	 	((struct direntry *)(buf+ (n)*32))
+
+uint16_t
+getushort(const void *pp)
+{
+        unsigned char const *p = (unsigned char const *)pp;
+
+        return (((uint16_t)p[1] << 8) | p[0]);
+}
+
+uint32_t
+getulong(const void *pp)
+{
+        unsigned char const *p = (unsigned char const *)pp;
+
+        return (((uint32_t)p[3] << 24) | ((uint32_t)p[2] << 16) | ((uint32_t)p[1] << 8) | p[0]);
+}
+
+#if 0
+void dump_buf(char *buf) {
+	int i;
+
+	for (i = 0; i< 512; i++) {
+		puthex(buf[i]);
+		putc(' ');
+		if ((i & 15) == 15) {
+			putnl();
+		};
+	};
+}
+
+void dump_long(char *str, uint32_t val) {
+	putstr(str);
+	puthex((val>>24)&0xff);
+	puthex((val>>16)&0xff);
+	puthex((val>>8)&0xff);
+	puthex(val&0xff);
+	putnl();
+}
+#else
+#define dump_buf(x) 
+#define dump_long(x,y)
+
+#endif
+
+static uint8_t	buf[512];
+static uint8_t	buf_fat[512];
+
+static uint32_t	start, start_fat, start_root, secno;
+static uint32_t	buf_fat_secno = 0;
+static uint8_t	cluster_size;
+static uint16_t	root_size;
+static uint16_t	current_cluster;
+static uint8_t	current_sector;
+static int32_t	bytes_left;
+
+int
+fatfindfile(char *fname)
+{
+	int		rc, i, j;
+
+	putstr("--MBR--\n");
+	rc = readblock(DOSBBSECTOR, buf);
+
+	if (dos_partition(0)->dp_typ != 6) {
+		putstr("bad partition type\n");
+		return -1;
+	};
+
+	start = getulong(dos_partition(0)->dp_start);
+	dump_long("start ", start);
+
+	putstr("--BOOT--\n");
+	rc = readblock(start, buf);
+	if (getushort(bootsector->bpbBytesPerSec) != 512) {
+		putstr("bad sector size\n");
+		return -1;
+	};
+
+	cluster_size = bootsector->bpbSecPerClust;
+	dump_long("cluster_size ", cluster_size);
+
+	start_fat = start + getushort(bootsector->bpbResSectors);
+	dump_long("start_fat ", start_fat);
+
+	root_size = getushort(bootsector->bpbRootDirEnts);
+	root_size = (root_size * 32+511)/512;
+	dump_long("root_size ", root_size);
+
+	dump_long("FATsecs ", getushort(bootsector->bpbFATsecs));
+	dump_long("FATs ", bootsector->bpbFATs);
+	start_root = start_fat + bootsector->bpbFATs * getushort(bootsector->bpbFATsecs);
+	start = start_root + root_size - 2 * cluster_size; /* first data sector for 0-based clusters */
+	dump_long("start_root ", start_root);
+
+	current_cluster = 0;
+
+	putstr("--ROOT--\n");
+	for(j = 0; j<root_size; j++) {
+		rc = readblock(start_root + j, buf);
+		for(i = 0; i<16; i++) {
+			rc = (direntry(i)->deName)[0];
+			if (rc == SLOT_EMPTY || rc == SLOT_DELETED) continue;
+
+			rc = direntry(i)->deAttributes & (ATTR_VOLUME|ATTR_DIRECTORY);
+			if (rc) continue;
+
+			current_cluster = getushort(direntry(i)->deStartCluster);
+			bytes_left = getulong(direntry(i)->deFileSize);
+
+			putstr(direntry(i)->deName);
+			putnl();
+			/* printf("%12s %02x %ld %ld\n", 
+					direntry(i)->deName, 
+					direntry(i)->deAttributes & 0x18, 
+					current_cluster,
+					bytes_left
+					); */
+
+			if (!strncmp(direntry(i)->deName, fname, 11)) {
+				break;
+			};
+			current_cluster = 0;
+		};
+		if (current_cluster) break;
+	};
+
+	if (!current_cluster) {
+		putstr("file not found\n");
+		return -1;
+	};
+	current_sector = 0;
+	putstr("File ok\n");
+	return 0;
+}
+
+int fatreadnext() {
+	if (bytes_left <= 0)
+		return 0;
+
+	if (current_sector == cluster_size) {
+		secno = start_fat + (current_cluster >> 8);
+		if (secno != buf_fat_secno) {
+			rc = readblock(secno, buf_fat);
+			buf_fat_secno = secno;
+		};
+		current_cluster = getushort(buf_fat+2*(current_cluster & 255));
+		current_sector = 0;
+	};
+
+	if (current_sector == 0)
+		secno = start + ((uint32_t)current_cluster) * cluster_size;
+
+	rc = readblock(secno, buf);
+
+	bytes_left -= 512;
+	secno++;
+	current_sector++;
+	if (bytes_left < 0)
+		return 512 + bytes_left;
+
+	return 512;
+}
+
+char *
+fatgetbuf() {
+	return buf;
+}

@@ -1,0 +1,15 @@
+old
+last_old
+drivers
+.svn
+rtl/maxII/output
+rtl/maxII/db
+rtl/maxII/incremental_db
+soft/.*\.o$
+soft/.*\.S$
+soft/.*\.lib$
+soft/.*\.map$
+soft/.*\.hex$
+soft/.*\.v$
+soft/.*\.bin$
+soft/.*\.ace$
