@@ -1,6 +1,5 @@
 old
 last_old
-drivers
 .svn
 rtl/maxII/output
 rtl/maxII/db
@@ -63,4 +62,5 @@ rtl/vp2/top_xst.xrpt
 rtl/vp2/vp2.ntrc_log
 rtl/vp2/vp2.restore
 rtl/vp2/xaw2verilog.log
-libusb-driver.so
+drivers/usb-driver/libusb-driver-DEBUG.so
+drivers/usb-driver/libusb-driver.so

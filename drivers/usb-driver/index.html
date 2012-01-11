@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+	<HEAD>
+		<TITLE>XILINX USB/Parallel JTAG cables on Linux without windrvr</TITLE>
+	</HEAD>
+	<BODY BGCOLOR="#FFFFFF" TEXT="#000000">
+		<H1>XILINX JTAG tools on Linux without proprietary kernel modules</H1>
+		<H2>About</H2>
+		<P>
+		When using <a href="http://www.xilinx.com">XILINX</a> JTAG software like Impact, Chipscope and XMD
+		on Linux, the proprietary kernel module <i>windrvr</i> from <a href="http://www.jungo.com">Jungo</a>
+		is needed to access the parallel- or usb-cable.
+		As this module does not work with current linux kernel versions (&gt; 2.6.18) a library was developed,
+		which emulates the module in userspace and allows the tools to access the JTAG cable without the need
+		for a proprietary kernel module.
+		</P>
+		<P>
+		The library uses <a href="http://libusb.sourceforge.net/">libusb</a> to access USB devices and the
+		<a href="http://people.redhat.com/twaugh/parport/html/x623.html">ppdev</a> interface to communicate
+		with parallel cables. The parallel part currently only supports Parallel Cable III mode (and PCIV in
+		PCIII compatibility mode) as the faster PCIV modes use another kernel module which is not emulated by
+		this library. So you are limited to a 200kHz JTAG clock when using Parallel Cable IV with this software.
+		The USB cable is supported at full speed.
+		</P>
+		<P>
+		Experimental support for FTDI 2232 based devices has been added. They are seen by Impact as a Parallel
+		Cable III. These devices are currently significantly slower than every other supported cable.
+		</P>
+		<P>
+		The library is called <i>libusb-driver</i> as it was developed to support the USB cable, but later
+		extended to also support parallel cables.
+		</P>
+		<P><B>News</B>
+		<UL>
+			<LI><P><I>2008-03-26</I>: Xilinx has released their own drivers based on libusb with ISE Design Suite 10.1.
+			To use them, you need to set the environment-variable <kbd>XIL_IMPACT_USE_LIBUSB</kbd> to <kbd>1</kbd>
+			before running the tools. The driver on this page no longer needs to be preloaded if you only used
+			it to access USB cables. Parallel port support still seems to rely on <i>windrvr</i>, which can be
+			emulated by <i>libusb-driver</i>.</P>
+			<P><B>Using 32-bit ISE 10.1 on a 64-bit platform:</B> When using the 32-bit JTAG tools from ISE Design
+			Suite 10.1 on a 64-bit machine, the tools will not connect to the cable but output the following
+			error: <I>Cable operation is not supported when running the 32-bit version of the application on a
+			64-bit platform.</I>
+			To fix this, run the tools with <KBD>linux32</KBD> or preload the newest 32-bit version of
+			<i>libusb-driver</i>. This will lead the tools to believe that they are running on a 32-bit
+			platform and allows them to connect to the cable.</P></LI>
+
+			<LI><P><I>2009-05-31</I>: ISE Design Suite 11.1 now uses Xilinx's libusb-based drivers as default, without
+			the need to set <kbd>XIL_IMPACT_USE_LIBUSB</kbd>. If you want to use this driver with ISE 11.1 for USB
+			cables and disable the builtin support for libusb, you now have to set <kbd>XIL_IMPACT_USE_LIBUSB</kbd>
+			to <kbd>0</kbd> (<kbd>export XIL_IMPACT_USE_LIBUSB=0</kbd> or <kbd>setenv XIL_IMPACT_USE_LIBUSB 0</kbd>).
+			For parallel cables Xilinx still relies on <i>windrvr</i>. This library works fine with parallel cables and
+			ISE 11.1 with no need for <i>windrvr</i>.</P></LI>
+
+			<LI><P><I>2010-03-15</I>: If you are using newer udev-versions (like the version included in Debian Squeeze
+			and Ubuntu 9.10), then the file <i>/etc/udev/rules.d/xusbdfwu.rules</i> is incompatible with this udev
+			version. The effect of this is that the cable-firmware gets never loaded and the cable led never lights up.</P>
+			<P>To fix this, run the following command as root:<BR>
+			<kbd>sed -i -e 's/TEMPNODE/tempnode/' -e 's/SYSFS/ATTRS/g' -e 's/BUS/SUBSYSTEMS/' /etc/udev/rules.d/xusbdfwu.rules</kbd><BR>
+			You may have to reboot for this change to take effect.</P></LI>
+
+			<LI><P><I>2010-05-22</I>: Support for ISE 12 is now available in the driver.</P></LI>
+
+			<LI><P><I>2011-05-08</I>: Support for ISE 13 is now available in the driver. A rewritten version of <i>setup_pcusb</i>
+			which works on modern distributions has been added.</P></LI>
+		</UL>
+		</P>
+		<H2>Supported Cables</H2>
+		The following cables are reported to work with this driver:
+		<ul>
+			<li><a href="http://www.xilinx.com/support/documentation/data_sheets/ds593.pdf">XILINX Platform Cable USB II</a></li>
+			<li><a href="http://direct.xilinx.com/bvdocs/publications/ds300.pdf">XILINX Platform Cable USB DLC9, DLC9LP and DLC9G</a></li>
+			<li><a href="http://www.xilinx.com/s3estarter">Integrated Platform Cable USB on Spartan 3E starter kit</a></li>
+			<li><a href="http://www.xilinx.com/s3astarter">Integrated Platform Cable USB on Spartan 3A starter kit</a></li>
+			<li><a href="http://www.digilentinc.com/Products/Detail.cfm?Nav1=Products&Nav2=Programmable&Prod=XUPV2P">Integrated Platform Cable USB on XUP-V2Pro</a></li>
+			<li><a href="http://direct.xilinx.com/bvdocs/publications/ds097.pdf">XILINX Parallel Cable IV</a> (in Parallel Cable III compatibility mode)</li>
+			<li>FCPU-X platform cable (XILINX Platform Cable USB clone)</li>
+			<li><a href="http://www.enterpoint.co.uk/">Enterpoint Prog2</a> Parallel Cable III clone</li>
+			<li><a href="http://www.trenz-electronic.de/">Trenz TE0149-01</a> Parallel Cable III clone</li>
+			<li><a href="http://www.digilentinc.com/Products/Catalog.cfm?Nav1=Products&amp;Nav2=Cables&amp;Cat=Cable">Digilent JTAG3</a> Parallel Cable III clone</li>
+			<li><a href="http://www.amontec.com/">Amontec JTAGkey-Tiny</a> (experimental)</li>
+		</ul>
+		These cables should work but have not yet been tested:
+		<ul>
+			<li>Integrated Platform Cable USB on other development boards</li>
+			<li>other Parallel Cable III clones</li>
+			<li>other FTDI2232 based devices which use the chips standard JTAG pinout (experimental)</li>
+		</ul>
+		<H2>Supported Software</H2>
+		The following software is reported to work with this driver:
+		<ul>
+			<li><a href="http://www.xilinx.com/tools/designtools.htm">ISE 13</a> (all editions)</li>
+			<li><a href="http://www.xilinx.com/tools/designtools.htm">ISE 12</a> (all editions)</li>
+			<li><a href="http://www.xilinx.com/tools/designtools.htm">ISE 11</a> (all editions)</li>
+			<li><a href="http://www.xilinx.com/ise/logic_design_prod/webpack.htm">ISE Webpack 10.1</a></li>
+			<li><a href="http://www.xilinx.com/ise/logic_design_prod/webpack.htm">ISE Webpack 9.2 SP1, SP2, SP3 and SP4</a></li>
+			<li><a href="http://www.xilinx.com/ise/logic_design_prod/webpack.htm">ISE Webpack 9.1 SP1, SP2 and SP3</a></li>
+			<li><a href="http://www.xilinx.com/ise/logic_design_prod/webpack.htm">ISE Webpack 8.2 SP3</a></li>
+			<li><a href="http://www.xilinx.com/ise/logic_design_prod/webpack.htm">ISE Webpack 8.1 SP3</a></li>
+			<li><a href="http://www.xilinx.com/ise/optional_prod/cspro.htm">ChipScope Pro 10.1</a></li>
+			<li><a href="http://www.xilinx.com/ise/optional_prod/cspro.htm">ChipScope Pro 9.2.01i, 9.2.02i, 9.2.03i and 9.2.04i</a></li>
+			<li><a href="http://www.xilinx.com/ise/optional_prod/cspro.htm">ChipScope Pro 9.1.02i and 9.1.03i</a></li>
+			<li><a href="http://www.xilinx.com/ise/optional_prod/cspro.htm">ChipScope Pro 8.2.04i</a></li>
+			<li><a href="http://www.xilinx.com/ise/embedded_design_prod/platform_studio.htm">EDK 10.1</a></li>
+			<li><a href="http://www.xilinx.com/ise/embedded_design_prod/platform_studio.htm">EDK 9.2.01i and 9.2.02i</a></li>
+			<li><a href="http://www.xilinx.com/ise/embedded_design_prod/platform_studio.htm">EDK 9.1.01i and 9.1.02i</a></li>
+			<li><a href="http://www.xilinx.com/ise/embedded_design_prod/platform_studio.htm">EDK 8.2.02i</a></li>
+			<li><a href="http://www.xilinx.com/ise/embedded_design_prod/platform_studio.htm">EDK 8.1.02i</a></li>
+			<li><a href="http://www.synplicity.com/products/identify/index.html">Synplicity Identify Debugger</a></li>
+		</ul>
+		<H2>Download</H2>
+		<ul>
+			<li>Download <a href="http://git.zerfleddert.de/cgi-bin/gitweb.cgi/usb-driver?a=snapshot;h=HEAD;sf=tgz">usb-driver-HEAD.tar.gz</a> (to build it, you need to have the libusb development package installed. It is called libusb-dev on Debian.)</li>
+			<li>Read the <a href="http://git.zerfleddert.de/cgi-bin/gitweb.cgi/usb-driver?a=blob_plain;f=README;hb=HEAD">README</a></li>
+			<li>Browse the <a href="http://git.zerfleddert.de/cgi-bin/gitweb.cgi/usb-driver?a=tree">Git repository</a> (<a href="http://git.zerfleddert.de/cgi-bin/gitweb.cgi/usb-driver">Summary</a>)</li>
+			<li>Precompiled <a href="libusb-driver.so">libusb-driver.so</a> for Debian Etch, but better build your own</li>
+			<li>Clone the <a href="http://git.or.cz/">Git</a> repository with: <kbd>git clone git://git.zerfleddert.de/usb-driver</kbd></li>
+		</ul>
+		<H2>Links</H2>
+		<ul>
+			<li><a href="http://groups.google.com/group/comp.arch.fpga/msg/94d8bb1f52e06b44">XILINX listened</a></li>
+			<li><a href="http://svenand.blogdrive.com/archive/55.html">Installation instructions using a MacBook running Ubuntu in VMware by Sven Andersson</a></li>
+			<li><a href="http://groups.google.com/group/comp.arch.fpga/browse_thread/thread/954a145428ec2c54/555f6bfb766a3a93#555f6bfb766a3a93">Using the libusb-driver on a 64bit system with a 32bit ISE by Ken Ryan</a></li>
+			<li><a href="http://groups.google.com/group/comp.arch.fpga/msg/2dfa36541174a4f2">Ubuntu installation instructions by Luzerne</a></li>
+			<li><a href="http://www.itee.uq.edu.au/~listarch/microblaze-uclinux/archive/2007/03/msg00101.html">Ubuntu installation instructions by Paul-Armand Verhaegen</a></li>
+			<li><a href="http://groups.google.com/group/comp.arch.fpga/browse_frm/thread/f149e5b6028e2c70">Initial announcement on comp.arch.fpga</a></li>
+			<li><a href="http://xc3sprog.sourceforge.net/">xc3sprog</a>, a suite of utilities for programming Xilinx FPGAs, CPLDs, and EEPROMs with the Xilinx Parallel Cable and other JTAG adapters under Linux</li>
+			<li><a href="http://inisyn.org/src/xup/">XUP</a> by inisyn research, opensource JTAG programming for Spartan 3E starter kit USB cable</li>
+			<li><a href="http://www.ixo.de/info/usb_jtag/">USB JTAG adapter</a> by Kolja Waschk, opensource integration of the XILINX platform cable USB into OpenOCD and openwince JTAG Tools</li>
+			<li><a href="http://xc3sprog.sourceforge.net/">Spartan3 JTAG download tools for GNU/Linux (xc3sprog)</a></li>
+			<li><a href="http://urjtag.org/">UrJTAG</a>, open source jtag tools with basic support for the xilinx XPCU</a></li>
+		</ul>
+		<HR>
+		<FONT SIZE="-1"><I><A HREF="mailto:cabledriver@zerfleddert.de">Michael Gernoth</A></I></FONT>
+	</BODY>
+</HTML>
