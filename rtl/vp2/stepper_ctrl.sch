@@ -39,6 +39,8 @@ BEGIN SCHEMATIC
         SIGNAL XLXN_72(31:0)
         SIGNAL position(31:0)
         SIGNAL XLXN_74(31:0)
+        SIGNAL XLXN_75
+        SIGNAL XLXN_76
         PORT Input clk
         PORT Input reset
         PORT Input relative
@@ -125,9 +127,20 @@ BEGIN SCHEMATIC
             LINE N 64 0 64 -32 
             LINE N 96 -64 32 -64 
         END BLOCKDEF
+        BEGIN BLOCKDEF or2
+            TIMESTAMP 2000 1 1 10 10 10
+            LINE N 0 -64 64 -64 
+            LINE N 0 -128 64 -128 
+            LINE N 256 -96 192 -96 
+            ARC N 28 -224 204 -48 112 -48 192 -96 
+            ARC N -40 -152 72 -40 48 -48 48 -144 
+            LINE N 112 -144 48 -144 
+            ARC N 28 -144 204 32 192 -96 112 -144 
+            LINE N 112 -48 48 -48 
+        END BLOCKDEF
         BEGIN BLOCK XLXI_4 dda
             PIN clk clk
-            PIN reset reset
+            PIN reset XLXN_76
             PIN relative relative
             PIN start start
             PIN divide_done XLXN_13
@@ -168,15 +181,17 @@ BEGIN SCHEMATIC
             PIN position(31:0) position(31:0)
             PIN acc(31:0) acc(31:0)
         END BLOCK
+        BEGIN BLOCK XLXI_13 or2
+            PIN I0 set_position
+            PIN I1 reset
+            PIN O XLXN_76
+        END BLOCK
     END NETLIST
     BEGIN SHEET 1 3520 2720
         BEGIN INSTANCE XLXI_4 816 1600 R0
         END INSTANCE
         BEGIN BRANCH clk
             WIRE 672 992 816 992
-        END BRANCH
-        BEGIN BRANCH reset
-            WIRE 672 1056 816 1056
         END BRANCH
         BEGIN INSTANCE XLXI_5 1712 1920 R0
         END INSTANCE
@@ -303,7 +318,6 @@ BEGIN SCHEMATIC
         IOMARKER 672 1312 target_time(31:0) R180 28
         IOMARKER 672 1184 start R180 28
         IOMARKER 672 1120 relative R180 28
-        IOMARKER 672 1056 reset R180 28
         IOMARKER 672 992 clk R180 28
         IOMARKER 1552 1152 velocity(31:0) R0 28
         IOMARKER 2880 1104 dir R0 28
@@ -312,5 +326,27 @@ BEGIN SCHEMATIC
         IOMARKER 2880 1264 acc(31:0) R0 28
         IOMARKER 2112 1152 set_position R180 28
         IOMARKER 2112 1280 data_in(31:0) R180 28
+        IOMARKER 320 976 reset R180 28
+        BEGIN BRANCH reset
+            WIRE 320 976 352 976
+            WIRE 352 976 352 1024
+            WIRE 352 1024 384 1024
+            WIRE 352 976 512 976
+            WIRE 512 976 560 976
+            BEGIN DISPLAY 516 976 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        INSTANCE XLXI_13 384 1152 R0
+        BEGIN BRANCH XLXN_76
+            WIRE 640 1056 816 1056
+        END BRANCH
+        BEGIN BRANCH set_position
+            WIRE 304 1088 320 1088
+            WIRE 320 1088 384 1088
+            BEGIN DISPLAY 320 1088 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
     END SHEET
 END SCHEMATIC

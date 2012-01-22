@@ -44,7 +44,6 @@ module dda(
 
 );
 
-
 reg [5:0] state;
 `define STATE_IDLE 0
 `define STATE_CALC1 1
@@ -55,12 +54,14 @@ reg direction;
 reg signed [32:0] remaining_time;
 reg [16:0] auto_stop_timer;
 reg signed [31:0] orig_target;
+reg restart;
 
 reg [5:0] next_state;
 reg next_direction;
 reg signed [32:0] next_remaining_time;
 reg [16:0] next_auto_stop_timer;
 reg signed [31:0] next_orig_target;
+reg next_restart;
 
 reg next_done;
 reg [31:0] next_divisor;
@@ -69,7 +70,7 @@ reg [31:0] next_start_divide;
 
 reg signed [31:0] next_velocity;
 
-always @(reset or target_position or target_time or start or position or quotinent or divide_done or state or remaining_time or direction or velocity or auto_stop_timer or relative)
+always @(reset or target_position or target_time or start or position or quotinent or divide_done or state or remaining_time or direction or velocity or auto_stop_timer or relative or restart)
 	begin
             next_state <= state;
             next_direction <= 0;
@@ -81,6 +82,7 @@ always @(reset or target_position or target_time or start or position or quotine
             next_auto_stop_timer <= auto_stop_timer;
             next_direction <= direction;
             next_done <= 0;
+				next_restart <= restart;
 
             if (reset)
                 begin
@@ -90,12 +92,13 @@ always @(reset or target_position or target_time or start or position or quotine
                     next_direction <= 0;
 						  next_auto_stop_timer <= 0;
 						  next_orig_target <= 0;
+						  next_restart <= 0;
                 end
             else
-                case (state)
+						case (state)
 							`STATE_IDLE: 
 								begin
-									if (start) 
+									if (start || restart) 
 										begin
 											if (relative)
 												begin
@@ -129,6 +132,7 @@ always @(reset or target_position or target_time or start or position or quotine
 											next_start_divide <= 1;
 											next_state <= `STATE_CALC1;
 											next_remaining_time <= {1'b0, target_time};
+											next_restart <= 0;
 										end
 									else
 										begin
@@ -145,33 +149,51 @@ always @(reset or target_position or target_time or start or position or quotine
 								end
                     `STATE_CALC1:
 								begin
-									next_state <= `STATE_CALC2;
+									if (start)
+										begin
+											next_restart <= 1;
+											next_state <= `STATE_IDLE;
+										end
+									else
+										next_state <= `STATE_CALC2;
 								end
                     `STATE_CALC2:
 								begin
-									if (divide_done)
+									if (start)
 										begin
-											if (~direction)
-												begin
-													next_velocity <= {1'b0 , quotinent[31:1]};
-												end
-											else
-												begin
-													next_velocity <= -{1'b0 , quotinent[31:1]};
-												end;
-											next_state <= `STATE_MOVING;
+											next_restart <= 1;
+											next_state <= `STATE_IDLE;
 										end
+									else
+										if (divide_done)
+											begin
+												if (~direction)
+													begin
+														next_velocity <= {1'b0 , quotinent[31:1]};
+													end
+												else
+													begin
+														next_velocity <= -{1'b0 , quotinent[31:1]};
+													end;
+												next_state <= `STATE_MOVING;
+											end
 								end
                     `STATE_MOVING:
 								begin
-									if (remaining_time[32] == 1)
+									if (start)
 										begin
+											next_restart <= 1;
 											next_state <= `STATE_IDLE;
-											next_done <= 1;
-											next_auto_stop_timer <= 1000; // 100000; // 1ms
 										end
+									else
+										if (remaining_time[32] == 1)
+											begin
+												next_state <= `STATE_IDLE;
+												next_done <= 1;
+												next_auto_stop_timer <= 1000; // 100000; // 1ms
+											end
 								end
-					endcase
+						endcase
 	end
 				
 always @(posedge clk)
@@ -186,6 +208,7 @@ always @(posedge clk)
             start_divide <= next_start_divide;
             auto_stop_timer <= next_auto_stop_timer;
             orig_target <= next_orig_target;
+				restart <= next_restart;
 				
             end_position <= next_orig_target;
             end_velocity <= next_velocity;

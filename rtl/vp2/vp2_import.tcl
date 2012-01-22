@@ -791,6 +791,7 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "datamux.v" 
       "dda.sym" 
       "dda.v" 
+      "dda_bus_if.v" 
       "div_steps.sym" 
       "div_steps.v" 
       "dpMem_dc.v" 
@@ -836,6 +837,7 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "step_gen.sym" 
       "step_gen.v" 
       "stepper_ctrl.sch" 
+      "stepper_ctrl.sym" 
       "test_div_steps.v" 
       "test_spi_wire.v" 
       "test_step_gen.v" 
@@ -902,6 +904,7 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "ctrlStsRegBI.v" 
       "datamux.v" 
       "dda.v" 
+      "dda_bus_if.v" 
       "div_steps.v" 
       "dpMem_dc.v" 
       "fifoRTL.v" 
@@ -973,6 +976,7 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "spi_master_ctrl.sym" 
       "spi_slave.sym" 
       "step_gen.sym" 
+      "stepper_ctrl.sym" 
       "top_guide.ncd"}
 
   set origination 2

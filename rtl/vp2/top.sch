@@ -198,9 +198,6 @@ BEGIN SCHEMATIC
         SIGNAL XLXN_1934(31:0)
         SIGNAL XLXN_1935(31:0)
         SIGNAL XLXN_1936(31:0)
-        SIGNAL XLXN_1937(31:0)
-        SIGNAL XLXN_1938(31:0)
-        SIGNAL XLXN_1939(31:0)
         SIGNAL XLXN_1946
         SIGNAL gpio_data(7:0)
         SIGNAL gpio_wr
@@ -784,6 +781,36 @@ BEGIN SCHEMATIC
             RECTANGLE N 400 -60 464 -36 
             LINE N 400 -48 464 -48 
         END BLOCKDEF
+        BEGIN BLOCKDEF stepper_ctrl
+            TIMESTAMP 2012 1 22 10 55 58
+            RECTANGLE N 64 -576 528 0 
+            LINE N 64 -544 0 -544 
+            LINE N 64 -480 0 -480 
+            LINE N 64 -416 0 -416 
+            LINE N 64 -352 0 -352 
+            RECTANGLE N 0 -300 64 -276 
+            LINE N 64 -288 0 -288 
+            RECTANGLE N 0 -236 64 -212 
+            LINE N 64 -224 0 -224 
+            RECTANGLE N 0 -172 64 -148 
+            LINE N 64 -160 0 -160 
+            LINE N 64 -96 0 -96 
+            RECTANGLE N 0 -44 64 -20 
+            LINE N 64 -32 0 -32 
+            RECTANGLE N 528 -556 592 -532 
+            LINE N 528 -544 592 -544 
+            RECTANGLE N 528 -492 592 -468 
+            LINE N 528 -480 592 -480 
+            LINE N 528 -416 592 -416 
+            RECTANGLE N 528 -364 592 -340 
+            LINE N 528 -352 592 -352 
+            LINE N 528 -288 592 -288 
+            LINE N 528 -224 592 -224 
+            RECTANGLE N 528 -172 592 -148 
+            LINE N 528 -160 592 -160 
+            RECTANGLE N 528 -108 592 -84 
+            LINE N 528 -96 592 -96 
+        END BLOCKDEF
         BEGIN BLOCK XLXI_6 cb16ce
             PIN C clk_cpu
             PIN CE XLXN_4
@@ -1191,6 +1218,25 @@ BEGIN SCHEMATIC
             PIN gpio_out(31:0) XLXN_1934(31:0)
             PIN gpio_ext_oe U38_OE
             PIN gpio_ext_dir U38_DIR
+        END BLOCK
+        BEGIN BLOCK XLXI_643 stepper_ctrl
+            PIN clk
+            PIN reset
+            PIN relative
+            PIN start
+            PIN target_time(31:0)
+            PIN target_position(31:0)
+            PIN target_velocity(31:0)
+            PIN set_position
+            PIN data_in(31:0)
+            PIN end_position(31:0)
+            PIN end_velocity(31:0)
+            PIN done
+            PIN acc(31:0)
+            PIN dir
+            PIN step
+            PIN velocity(31:0)
+            PIN position(31:0)
         END BLOCK
     END NETLIST
     BEGIN SHEET 1 7609 5382
@@ -2577,5 +2623,7 @@ BEGIN SCHEMATIC
                 ALIGNMENT SOFT-BCENTER
             END DISPLAY
         END BRANCH
+        BEGIN INSTANCE XLXI_643 5904 3552 R0
+        END INSTANCE
     END SHEET
 END SCHEMATIC

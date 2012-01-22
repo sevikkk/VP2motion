@@ -84,6 +84,12 @@ initial begin
 						target_position = 5;
 						start = 1;
 					end
+					159000: begin
+						target_time = 100000;
+						target_position = -5;
+						relative = 1;
+						start = 1;
+					end
 				endcase
 				if (done)
 					begin
