@@ -27,10 +27,10 @@ module test_step_gen;
 	// Inputs
 	reg clk;
 	reg reset;
-	reg [31:0] velocity;
+	reg signed [31:0] velocity;
 	wire step;
 	wire dir;
-	wire [31:0] position;
+	wire signed [31:0] position;
 
 	// Instantiate the Unit Under Test (UUT)
 	step_gen uut (
@@ -54,9 +54,9 @@ module test_step_gen;
 		#17;
 		
 		reset = 0;
-		velocity = 32'h400000;
+		velocity = 32'h40000;
 		#1000000;
-		velocity = 32'hFFC00000;
+		velocity = -32'h40000;
 		
         
 		// Add stimulus here

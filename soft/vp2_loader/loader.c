@@ -34,6 +34,16 @@
 #define SDC_TXFIFO_COUNT2 	REG(0xD123)
 #define SDC_TXFIFO_CONTROL 	REG(0xD124)
 
+#define MAXSPI_DATA REG(0xD200)
+#define MAXSPI_STATUS REG(0xD201)
+#define         MAXSPI_STATUS_SS 0x01
+#define         MAXSPI_STATUS_RXRDY 0x02
+#define         MAXSPI_STATUS_TXFULL 0x04
+#define         MAXSPI_STATUS_TXEMPTY 0x08
+#define         MAXSPI_STATUS_DEVNUM 0x30
+#define         MAXSPI_STATUS_DEVNUM_SHIFT 4
+#define MAXSPI_DELAY REG(0xD202)
+
 void putc(char ch) {
 	while (!(UART_STATUS & UART_STATUS_TBUFE)) {};
 	UART_DATA = ch;
@@ -131,11 +141,35 @@ readblock(uint32_t n, uint8_t *buf)
 
 }
 
+
+void
+osram_write(uint8_t c) {
+	MAXSPI_STATUS = MAXSPI_STATUS_SS | (1<<MAXSPI_STATUS_DEVNUM_SHIFT);
+	MAXSPI_DATA = c;
+	while (! (MAXSPI_STATUS & MAXSPI_STATUS_RXRDY)) {};
+	c = MAXSPI_DATA;
+	MAXSPI_STATUS = 0;
+}
+
+
+const uint8_t osram_init[26] = {
+	0x03, 0x0f,
+	0xc5, 0xe1, 0x96, 0xf2, 0x8c, 0xf0,
+	0x45, 0x01, 0x76, 0x8a, 0x8c, 0x70,
+	0x85, 0x01, 0x76, 0x8a, 0x8c, 0x70,
+	0x05, 0x01, 0x76, 0x92, 0x94, 0x68
+};
+
 char ch, ch1;
 char *ptr;
 
 void
 main_loop() {
+
+        for (ch = 0; ch < 26; ch++) {
+		osram_write(osram_init[ch]);
+	};
+
 	ch = sdinit();
 	if (ch) return;
 	ptr = ((char *) 0x1000); /* Load addr */
@@ -157,7 +191,7 @@ main_loop() {
 int
 main() {
         while (1) {
-                putstr("Loader v2\r\n");
+                putstr("Loader v3\r\n");
                 main_loop();
                 for (ch = 0; ch < 20; ch++) 
                         for (ch1 = 0; ch1 < 200; ch1++) 

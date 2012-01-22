@@ -66,4 +66,4 @@ drivers/usb-driver/libusb-driver-DEBUG.so
 drivers/usb-driver/libusb-driver.so
 rtl/vp2/top_guide.ncd
 rtl/vp2/vp2.ise
-
+emu/skeinforge

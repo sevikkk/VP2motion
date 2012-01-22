@@ -1080,6 +1080,24 @@ uint8_t osram_init[26] = {
 	0x05, 0x01, 0x76, 0x92, 0x94, 0x68
 };
 
+void
+do_div(void) {
+	uint32_t a;
+	uint32_t b;
+	uint32_t c;
+	int i;
+
+	for (i = 0; i<10; i++) {
+		a = 21312L + i;
+		b = 223L - i;
+		c = a/b;
+		cprintf("%04x%04x%04x%04x\n", 
+			(uint16_t)(c >> 16 & 0xffff),
+			(uint16_t)(c & 0xffff),
+		);
+	};
+}
+
 int 
 main(int argc, char **argv)
 {
