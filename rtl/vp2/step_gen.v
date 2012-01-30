@@ -37,6 +37,8 @@ reg [9:0] step_cnt;
 reg signed [31:0] next_acc;
 reg signed [31:0] next_position;
 
+reg signed [31:0] cur_velocity;
+reg signed [31:0] next_cur_velocity;
 
 always @(reset or velocity or set_position or acc)
 	begin

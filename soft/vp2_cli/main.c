@@ -7,6 +7,7 @@
 #include "cmdline.h"
 
 #define REG(x) (*((volatile char *)(x)))
+#define REG32(x) (*((volatile uint32_t *)(x)))
 
 #define UART_DATA REG(0xD000)
 #define UART_STATUS REG(0xD001)
@@ -48,6 +49,95 @@
 #define 	MAXSPI_STATUS_DEVNUM 0x30
 #define 	MAXSPI_STATUS_DEVNUM_SHIFT 4
 #define MAXSPI_DELAY REG(0xD202)
+
+#define STEPPERS_OUT_SELECT1 REG(0xD400)
+#define STEPPERS_OUT_SELECT2 REG(0xD401)
+
+#define STEPPERS_IN_SELECT REG(0xD402)
+#define 	STEPPERS_IN_LOOP 0
+#define 	STEPPERS_IN_X_CUR_POS 1
+#define 	STEPPERS_IN_X_CUR_VEL 2
+#define 	STEPPERS_IN_X_END_POS 3
+#define 	STEPPERS_IN_X_END_VEL 4
+#define 	STEPPERS_IN_Y_CUR_POS 5
+#define 	STEPPERS_IN_Y_CUR_VEL 6
+#define 	STEPPERS_IN_Y_END_POS 7
+#define 	STEPPERS_IN_Y_END_VEL 8
+#define 	STEPPERS_IN_Z_CUR_POS 9
+#define 	STEPPERS_IN_Z_CUR_VEL 10
+#define 	STEPPERS_IN_Z_END_POS 11
+#define 	STEPPERS_IN_Z_END_VEL 12
+#define 	STEPPERS_IN_A_CUR_POS 13
+#define 	STEPPERS_IN_A_CUR_VEL 14
+#define 	STEPPERS_IN_A_END_POS 15
+#define 	STEPPERS_IN_A_END_VEL 16
+#define 	STEPPERS_IN_X_ENDSTOP_POS 17
+#define 	STEPPERS_IN_X_ENDSTOP_BOUNCE 18 
+#define 	STEPPERS_IN_Y_ENDSTOP_POS 19
+#define 	STEPPERS_IN_Y_ENDSTOP_BOUNCE 20
+#define 	STEPPERS_IN_Z_ENDSTOP_POS 21
+#define 	STEPPERS_IN_Z_ENDSTOP_BOUNCE 22
+#define 	STEPPERS_IN_ENDSTOP_CYCLES 23
+
+#define STEPPERS_SET_GEN REG(0xD403)
+#define 	STEPPERS_SET_X_START 0
+#define 	STEPPERS_SET_X_SET_POS 1
+#define 	STEPPERS_SET_X_SET_TARGET_TIME 2
+#define 	STEPPERS_SET_X_SET_TARGET_POS 3
+#define 	STEPPERS_SET_X_SET_TARGET_VEL 4
+#define 	STEPPERS_SET_Y_START 5
+#define 	STEPPERS_SET_Y_SET_POS 6
+#define 	STEPPERS_SET_Y_SET_TARGET_TIME 7
+#define 	STEPPERS_SET_Y_SET_TARGET_POS 8
+#define 	STEPPERS_SET_Y_SET_TARGET_VEL 9
+#define 	STEPPERS_SET_Z_START 10
+#define 	STEPPERS_SET_Z_SET_POS 11
+#define 	STEPPERS_SET_Z_SET_TARGET_TIME 12
+#define 	STEPPERS_SET_Z_SET_TARGET_POS 13
+#define 	STEPPERS_SET_Z_SET_TARGET_VEL 14
+#define 	STEPPERS_SET_A_START 15
+#define 	STEPPERS_SET_A_SET_POS 16
+#define 	STEPPERS_SET_A_SET_TARGET_TIME 17
+#define 	STEPPERS_SET_A_SET_TARGET_POS 18
+#define 	STEPPERS_SET_A_SET_TARGET_VEL 19
+#define 	STEPPERS_SET_DEBOUNCE_UNLOCK 20
+#define 	STEPPERS_SET_DEBOUNCE_SET_TIMEOUT 21
+
+#define STEPPERS_CAPTURE REG(0xD404)
+#define STEPPERS_MISC_IN0 REG(0xD408)
+#define		STEPPERS_MISC_IN0_DONE_X 1
+#define		STEPPERS_MISC_IN0_DONE_Y 2
+#define		STEPPERS_MISC_IN0_DONE_Z 4
+#define		STEPPERS_MISC_IN0_DONE_A 8
+#define STEPPERS_MISC_IN1 REG(0xD409)
+#define		STEPPERS_MISC_IN1_END_X 1
+#define		STEPPERS_MISC_IN1_END_CHG_X 2
+#define		STEPPERS_MISC_IN1_END_Y 4
+#define		STEPPERS_MISC_IN1_END_CHG_Y 8
+#define		STEPPERS_MISC_IN1_END_Z 16
+#define		STEPPERS_MISC_IN1_END_CHG_Z 32
+#define STEPPERS_MISC_IN2 REG(0xD40A)
+#define STEPPERS_MISC_IN3 REG(0xD40B)
+#define STEPPERS_MISC_OUT0 REG(0xD40C)
+#define		STEPPERS_MISC_OUT0_REL_X 1
+#define		STEPPERS_MISC_OUT0_REL_Y 2
+#define		STEPPERS_MISC_OUT0_REL_Z 4
+#define		STEPPERS_MISC_OUT0_REL_A 8
+#define STEPPERS_MISC_OUT1 REG(0xD40D)
+#define		STEPPERS_MISC_OUT1_ENABLE_XYZ 1
+#define		STEPPERS_MISC_OUT1_ENABLE_A 2
+#define STEPPERS_MISC_OUT2 REG(0xD40E)
+#define		STEPPERS_MISC_OUT2_INVERT_DIR_X 1
+#define		STEPPERS_MISC_OUT2_INVERT_DIR_Y 2
+#define		STEPPERS_MISC_OUT2_INVERT_DIR_Z 4
+#define		STEPPERS_MISC_OUT2_INVERT_DIR_A 8
+#define		STEPPERS_MISC_OUT2_INVERT_END_X 16
+#define		STEPPERS_MISC_OUT2_INVERT_END_Y 32
+#define		STEPPERS_MISC_OUT2_INVERT_END_Z 64
+#define STEPPERS_MISC_OUT3 REG(0xD40F)
+
+#define STEPPERS_REG32(n) REG32(0xD480 + (n<<2))
+#define STEPPERS_REG(n, m) REG(0xD480 + (n<<2) + m)
 
 uint8_t	buf_cmd[16];
 uint8_t	buf[512];
@@ -1010,26 +1100,47 @@ osram_write(uint8_t c) {
 
 void
 do_rd(void) {
-	int16_t rc;
-	int8_t val;
+	uint16_t rc;
+	uint8_t val;
 	rc = cmdlineGetArgHex(1);
 
 	val = REG(rc);
-	cprintf("%04X: %02X\n", rc, val);
+	cprintf("%04X: %02X\n", rc, (uint16_t)val);
 }
 
 
 void
 do_wr(void) {
-	int16_t rc;
-	int8_t val;
+	uint16_t rc;
+	uint8_t val;
 	rc = cmdlineGetArgHex(1);
 	val = cmdlineGetArgHex(2);
 
 	REG(rc) = val;
-	cprintf("%04X <= %02X\n", rc, val);
+	cprintf("%04X <= %02X\n", rc, (uint16_t)val);
 }
 
+void
+do_rd32(void) {
+	uint16_t rc;
+	uint32_t val;
+	rc = cmdlineGetArgHex(1);
+
+	val = REG32(rc);
+	cprintf("%04X: %08lX\n", rc, val);
+}
+
+
+void
+do_wr32(void) {
+	uint16_t rc;
+	uint32_t val;
+	rc = cmdlineGetArgHex(1);
+	val = cmdlineGetArgHex(2);
+
+	REG32(rc) = val;
+	cprintf("%04X <= %08lX\n", rc, val);
+}
 void
 do_readrom(void) {
 	int16_t rc;
@@ -1064,6 +1175,136 @@ do_readrom(void) {
 	};
 }
 
+
+void
+do_step(void) {
+	char *subcommand;
+	int8_t i, a;
+	int32_t time;
+	int32_t delta;
+
+	/*
+	cprintf("100: %x\n", REG(0x100));
+	cprintf("180: %x\n", REG(0x180));
+	cprintf("200: %x\n", REG(0x200));
+	cprintf("280: %x\n", REG(0x280));
+	cprintf("300: %x\n", REG(0x300));
+	cprintf("380: %x\n", REG(0x380));
+	cprintf("700: %x\n", REG(0x700));
+	cprintf("780: %x\n", REG(0x780));
+	cprintf("D00: %x\n", REG(0xD00));
+	cprintf("D80: %x\n", REG(0xD80));
+	*/
+
+	i = 1;
+	while (1) {
+		subcommand = cmdlineGetArgStr(i);
+		i++;
+
+		if (subcommand[0] == '\0')
+			break;
+
+		if (strncmp("enable", subcommand, 6) == 0) {
+			cprintf("enable motors\n");
+			STEPPERS_MISC_OUT1 |= STEPPERS_MISC_OUT1_ENABLE_XYZ | STEPPERS_MISC_OUT1_ENABLE_A;
+		} else if (strncmp("disable", subcommand, 7) == 0){
+			STEPPERS_MISC_OUT1 &= ~(STEPPERS_MISC_OUT1_ENABLE_XYZ | STEPPERS_MISC_OUT1_ENABLE_A);
+			cprintf("disable motors\n");
+		} else if (strncmp("time", subcommand, 4) == 0){
+			time = cmdlineGetArgInt(i);
+			time = time * 50000l;
+			i++;
+			cprintf("target time: %ld\n", time);
+			STEPPERS_REG32(0) = time;
+		} else if (strncmp("x", subcommand, 1) == 0){
+			delta = cmdlineGetArgInt(i);
+			i++;
+			cprintf("x to %ld in %ld\n", delta, STEPPERS_REG32(0));
+			STEPPERS_REG32(1) = delta;
+			STEPPERS_OUT_SELECT1 = 0;
+			STEPPERS_SET_GEN = STEPPERS_SET_X_SET_TARGET_TIME;
+			STEPPERS_OUT_SELECT1 = 1;
+			STEPPERS_SET_GEN = STEPPERS_SET_X_SET_TARGET_POS;
+			STEPPERS_SET_GEN = STEPPERS_SET_X_START;
+		} else if (strncmp("y", subcommand, 1) == 0){
+			delta = cmdlineGetArgInt(i);
+			i++;
+			cprintf("y to %ld in %ld\n", delta, STEPPERS_REG32(0));
+			STEPPERS_REG32(1) = delta;
+			STEPPERS_OUT_SELECT1 = 0;
+			STEPPERS_SET_GEN = STEPPERS_SET_Y_SET_TARGET_TIME;
+			STEPPERS_OUT_SELECT1 = 1;
+			STEPPERS_SET_GEN = STEPPERS_SET_Y_SET_TARGET_POS;
+			STEPPERS_SET_GEN = STEPPERS_SET_Y_START;
+		} else if (strncmp("z", subcommand, 1) == 0){
+			delta = cmdlineGetArgInt(i);
+			i++;
+			cprintf("z to %ld in %ld\n", delta, STEPPERS_REG32(0));
+			STEPPERS_REG32(1) = delta;
+			STEPPERS_OUT_SELECT1 = 0;
+			STEPPERS_SET_GEN = STEPPERS_SET_Z_SET_TARGET_TIME;
+			STEPPERS_OUT_SELECT1 = 1;
+			STEPPERS_SET_GEN = STEPPERS_SET_Z_SET_TARGET_POS;
+			STEPPERS_SET_GEN = STEPPERS_SET_Z_START;
+		} else if (strncmp("a", subcommand, 1) == 0){
+			delta = cmdlineGetArgInt(i);
+			i++;
+			cprintf("a to %ld in %ld\n", delta, STEPPERS_REG32(0));
+			STEPPERS_REG32(1) = delta;
+			STEPPERS_OUT_SELECT1 = 0;
+			STEPPERS_SET_GEN = STEPPERS_SET_A_SET_TARGET_TIME;
+			STEPPERS_OUT_SELECT1 = 1;
+			STEPPERS_SET_GEN = STEPPERS_SET_A_SET_TARGET_POS;
+			STEPPERS_SET_GEN = STEPPERS_SET_A_START;
+		} else if (strncmp("home", subcommand, 4) == 0){
+			cprintf("set to 0\n");
+			STEPPERS_REG32(1) = 0;
+			STEPPERS_OUT_SELECT1 = 1;
+			STEPPERS_SET_GEN = STEPPERS_SET_X_SET_POS;
+			STEPPERS_SET_GEN = STEPPERS_SET_Y_SET_POS;
+			STEPPERS_SET_GEN = STEPPERS_SET_Z_SET_POS;
+			STEPPERS_SET_GEN = STEPPERS_SET_A_SET_POS;
+		} else if (strncmp("status", subcommand, 6) == 0){
+			STEPPERS_IN_SELECT = STEPPERS_IN_X_CUR_POS;
+			STEPPERS_CAPTURE = 2;
+			STEPPERS_IN_SELECT = STEPPERS_IN_X_CUR_VEL;
+			STEPPERS_CAPTURE = 3;
+			STEPPERS_IN_SELECT = STEPPERS_IN_Y_CUR_POS;
+			STEPPERS_CAPTURE = 4;
+			STEPPERS_IN_SELECT = STEPPERS_IN_Y_CUR_VEL;
+			STEPPERS_CAPTURE = 5;
+			STEPPERS_IN_SELECT = STEPPERS_IN_Z_CUR_POS;
+			STEPPERS_CAPTURE = 6;
+			STEPPERS_IN_SELECT = STEPPERS_IN_Z_CUR_VEL;
+			STEPPERS_CAPTURE = 7;
+			STEPPERS_IN_SELECT = STEPPERS_IN_A_CUR_POS;
+			STEPPERS_CAPTURE = 8;
+			STEPPERS_IN_SELECT = STEPPERS_IN_A_CUR_VEL;
+			STEPPERS_CAPTURE = 9;
+			a = STEPPERS_MISC_IN1;
+			STEPPERS_SET_GEN = STEPPERS_SET_DEBOUNCE_UNLOCK;
+			cprintf("    pos     vel\n");
+			cprintf("x: %8ld %10ld\n", STEPPERS_REG32(2), STEPPERS_REG32(3));
+			cprintf("y: %8ld %10ld\n", STEPPERS_REG32(4), STEPPERS_REG32(5));
+			cprintf("z: %8ld %10ld\n", STEPPERS_REG32(6), STEPPERS_REG32(7));
+			cprintf("a: %8ld %10ld\n", STEPPERS_REG32(8), STEPPERS_REG32(9));
+			cprintf("endstops: %02x\n", a);
+		};
+	};
+	/*
+	cprintf("100: %x\n", REG(0x100));
+	cprintf("180: %x\n", REG(0x180));
+	cprintf("200: %x\n", REG(0x200));
+	cprintf("280: %x\n", REG(0x280));
+	cprintf("300: %x\n", REG(0x300));
+	cprintf("380: %x\n", REG(0x380));
+	cprintf("700: %x\n", REG(0x700));
+	cprintf("780: %x\n", REG(0x780));
+	cprintf("D00: %x\n", REG(0xD00));
+	cprintf("D80: %x\n", REG(0xD80));
+	*/
+}
+
 void
 do_osram(void) {
 	int16_t rc;
@@ -1080,30 +1321,23 @@ uint8_t osram_init[26] = {
 	0x05, 0x01, 0x76, 0x92, 0x94, 0x68
 };
 
-void
-do_div(void) {
-	uint32_t a;
-	uint32_t b;
-	uint32_t c;
-	int i;
-
-	for (i = 0; i<10; i++) {
-		a = 21312L + i;
-		b = 223L - i;
-		c = a/b;
-		cprintf("%04x%04x%04x%04x\n", 
-			(uint16_t)(c >> 16 & 0xffff),
-			(uint16_t)(c & 0xffff),
-		);
-	};
-}
-
 int 
 main(int argc, char **argv)
 {
 	char ch;
 
-	cprintf("Main started\n");
+	cprintf("Main started\nVersion: ");
+	cprintf(MAIN_VERSION);
+	cprintf("\n");
+
+	STEPPERS_MISC_OUT2 = 
+		STEPPERS_MISC_OUT2_INVERT_DIR_Y | 
+		STEPPERS_MISC_OUT2_INVERT_DIR_Z | 
+		STEPPERS_MISC_OUT2_INVERT_END_X | 
+		STEPPERS_MISC_OUT2_INVERT_END_Y | 
+		STEPPERS_MISC_OUT2_INVERT_END_Z;
+	STEPPERS_SET_GEN = STEPPERS_SET_DEBOUNCE_UNLOCK;
+
 	for (ch = 0; ch < 26; ch++) {
 		osram_write(osram_init[ch]);
 	};
@@ -1125,6 +1359,9 @@ main(int argc, char **argv)
 	cmdlineAddCommand("readrom", do_readrom);
 	cmdlineAddCommand("rd", do_rd);
 	cmdlineAddCommand("wr", do_wr);
+	cmdlineAddCommand("rd32", do_rd32);
+	cmdlineAddCommand("wr32", do_wr32);
+	cmdlineAddCommand("step", do_step);
 	cmdlineAddCommand("reset", (void *)0xE000);
 	cmdlinePrintPrompt();
 

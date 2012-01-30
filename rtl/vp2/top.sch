@@ -43,7 +43,6 @@ BEGIN SCHEMATIC
         SIGNAL flashspi_ss
         SIGNAL cpu_addr(15:0)
         SIGNAL XLXN_433
-        SIGNAL XLXN_434
         SIGNAL uart_status(7:0)
         SIGNAL XLXN_222
         SIGNAL cpu_addr_reg(15:0)
@@ -80,22 +79,6 @@ BEGIN SCHEMATIC
         SIGNAL XLXN_1517(7:0)
         SIGNAL osram_load
         SIGNAL osram_clk
-        SIGNAL osram_data
-        SIGNAL wheel1
-        SIGNAL wheel2
-        SIGNAL bump1
-        SIGNAL bump2
-        SIGNAL front_wheel
-        SIGNAL IR
-        SIGNAL cnt(5)
-        SIGNAL XLXN_1294
-        SIGNAL XLXN_1298
-        SIGNAL snd
-        SIGNAL leds_power
-        SIGNAL m2b
-        SIGNAL m2a
-        SIGNAL m1b
-        SIGNAL m1a
         SIGNAL gpin0
         SIGNAL gpin10
         SIGNAL gpin9
@@ -202,6 +185,34 @@ BEGIN SCHEMATIC
         SIGNAL gpio_data(7:0)
         SIGNAL gpio_wr
         SIGNAL gpio_rd
+        SIGNAL XLXN_434
+        SIGNAL steppers_wr
+        SIGNAL steppers_rd
+        SIGNAL steppers_data(7:0)
+        SIGNAL osram_data
+        SIGNAL dir_y
+        SIGNAL step_y
+        SIGNAL dir_z
+        SIGNAL step_z
+        SIGNAL dir_a
+        SIGNAL step_a
+        SIGNAL step_x
+        SIGNAL dir_x
+        SIGNAL enable_a
+        SIGNAL enable_xyz
+        SIGNAL XLXN_2035
+        SIGNAL XLXN_2036
+        SIGNAL XLXN_2037
+        SIGNAL XLXN_2038
+        SIGNAL XLXN_2039
+        SIGNAL XLXN_2040
+        SIGNAL XLXN_2041
+        SIGNAL XLXN_2042
+        SIGNAL XLXN_2043
+        SIGNAL XLXN_2044
+        SIGNAL z_endstop
+        SIGNAL y_endstop
+        SIGNAL x_endstop
         PORT Input clk
         PORT Input SYSRESET
         PORT Output led1
@@ -222,19 +233,6 @@ BEGIN SCHEMATIC
         PORT Output flashspi_di
         PORT Output osram_load
         PORT Output osram_clk
-        PORT Output osram_data
-        PORT Input wheel1
-        PORT Input wheel2
-        PORT Input bump1
-        PORT Input bump2
-        PORT Input front_wheel
-        PORT Input IR
-        PORT Output snd
-        PORT Output leds_power
-        PORT Output m2b
-        PORT Output m2a
-        PORT Output m1b
-        PORT Output m1a
         PORT Input gpin0
         PORT Input gpin10
         PORT Input gpin9
@@ -333,6 +331,20 @@ BEGIN SCHEMATIC
         PORT BiDirectional gpio31
         PORT Output U38_OE
         PORT Output U38_DIR
+        PORT Output osram_data
+        PORT Output dir_y
+        PORT Output step_y
+        PORT Output dir_z
+        PORT Output step_z
+        PORT Output dir_a
+        PORT Output step_a
+        PORT Output step_x
+        PORT Output dir_x
+        PORT Output enable_a
+        PORT Output enable_xyz
+        PORT Input z_endstop
+        PORT Input y_endstop
+        PORT Input x_endstop
         BEGIN BLOCKDEF cb16ce
             TIMESTAMP 2000 1 1 10 10 10
             LINE N 384 -192 320 -192 
@@ -444,46 +456,52 @@ BEGIN SCHEMATIC
             LINE N 320 -32 384 -32 
         END BLOCKDEF
         BEGIN BLOCKDEF datamux
-            TIMESTAMP 2009 4 27 19 52 37
-            LINE N 432 160 496 160 
-            LINE N 432 224 496 224 
-            LINE N 432 288 496 288 
-            RECTANGLE N 0 84 64 108 
-            LINE N 64 96 0 96 
-            LINE N 432 96 496 96 
-            LINE N 64 -608 0 -608 
-            LINE N 64 -544 0 -544 
-            LINE N 64 -480 0 -480 
+            TIMESTAMP 2012 1 28 12 45 19
+            RECTANGLE N 64 -1080 448 0 
+            RECTANGLE N 0 -108 64 -84 
+            LINE N 64 -96 0 -96 
+            LINE N 64 -1056 0 -1056 
+            LINE N 64 -992 0 -992 
+            LINE N 64 -928 0 -928 
+            LINE N 64 -864 0 -864 
+            RECTANGLE N 0 -428 64 -404 
             LINE N 64 -416 0 -416 
             RECTANGLE N 0 -364 64 -340 
             LINE N 64 -352 0 -352 
-            RECTANGLE N 0 -300 64 -276 
-            LINE N 64 -288 0 -288 
+            RECTANGLE N 0 -812 64 -788 
+            LINE N 64 -800 0 -800 
+            RECTANGLE N 0 -748 64 -724 
+            LINE N 64 -736 0 -736 
+            RECTANGLE N 0 -684 64 -660 
+            LINE N 64 -672 0 -672 
+            RECTANGLE N 0 -620 64 -596 
+            LINE N 64 -608 0 -608 
+            RECTANGLE N 0 -556 64 -532 
+            LINE N 64 -544 0 -544 
+            LINE N 64 -480 0 -480 
             RECTANGLE N 0 -236 64 -212 
             LINE N 64 -224 0 -224 
-            RECTANGLE N 0 -172 64 -148 
-            LINE N 64 -160 0 -160 
-            RECTANGLE N 0 -108 64 -84 
-            LINE N 64 -96 0 -96 
-            LINE N 432 -288 496 -288 
-            LINE N 432 -96 496 -96 
-            RECTANGLE N 432 -620 496 -596 
-            LINE N 432 -608 496 -608 
-            LINE N 432 -544 496 -544 
-            LINE N 432 -160 496 -160 
-            LINE N 64 -32 0 -32 
-            RECTANGLE N 0 20 64 44 
-            LINE N 64 32 0 32 
-            LINE N 432 -32 496 -32 
-            LINE N 432 32 496 32 
-            LINE N 64 -64 432 -64 
-            LINE N 432 -192 64 -192 
-            LINE N 64 -320 432 -320 
-            LINE N 64 64 432 64 
-            RECTANGLE N 64 -640 432 388 
-            LINE N 64 192 432 192 
-            RECTANGLE N 0 212 64 236 
-            LINE N 64 224 0 224 
+            LINE N 448 -96 512 -96 
+            LINE N 448 -32 512 -32 
+            LINE N 448 -224 512 -224 
+            LINE N 448 -160 512 -160 
+            LINE N 448 -352 512 -352 
+            LINE N 448 -288 512 -288 
+            LINE N 448 -480 512 -480 
+            LINE N 448 -416 512 -416 
+            LINE N 448 -544 512 -544 
+            LINE N 448 -608 512 -608 
+            LINE N 448 -736 512 -736 
+            LINE N 448 -992 512 -992 
+            RECTANGLE N 448 -1068 512 -1044 
+            LINE N 448 -1056 512 -1056 
+            LINE N 64 -768 448 -768 
+            LINE N 64 -704 448 -704 
+            LINE N 64 -640 448 -640 
+            LINE N 64 -512 448 -512 
+            LINE N 64 -384 448 -384 
+            LINE N 64 -256 448 -256 
+            LINE N 64 -128 448 -128 
         END BLOCKDEF
         BEGIN BLOCKDEF TxUnit
             TIMESTAMP 2008 11 17 12 23 22
@@ -781,35 +799,32 @@ BEGIN SCHEMATIC
             RECTANGLE N 400 -60 464 -36 
             LINE N 400 -48 464 -48 
         END BLOCKDEF
-        BEGIN BLOCKDEF stepper_ctrl
-            TIMESTAMP 2012 1 22 10 55 58
-            RECTANGLE N 64 -576 528 0 
-            LINE N 64 -544 0 -544 
-            LINE N 64 -480 0 -480 
-            LINE N 64 -416 0 -416 
+        BEGIN BLOCKDEF steppers_module
+            TIMESTAMP 2012 1 29 0 20 4
             LINE N 64 -352 0 -352 
-            RECTANGLE N 0 -300 64 -276 
             LINE N 64 -288 0 -288 
-            RECTANGLE N 0 -236 64 -212 
             LINE N 64 -224 0 -224 
-            RECTANGLE N 0 -172 64 -148 
             LINE N 64 -160 0 -160 
+            RECTANGLE N 0 -108 64 -84 
             LINE N 64 -96 0 -96 
             RECTANGLE N 0 -44 64 -20 
             LINE N 64 -32 0 -32 
-            RECTANGLE N 528 -556 592 -532 
-            LINE N 528 -544 592 -544 
-            RECTANGLE N 528 -492 592 -468 
-            LINE N 528 -480 592 -480 
-            LINE N 528 -416 592 -416 
-            RECTANGLE N 528 -364 592 -340 
-            LINE N 528 -352 592 -352 
-            LINE N 528 -288 592 -288 
-            LINE N 528 -224 592 -224 
-            RECTANGLE N 528 -172 592 -148 
-            LINE N 528 -160 592 -160 
-            RECTANGLE N 528 -108 592 -84 
-            LINE N 528 -96 592 -96 
+            RECTANGLE N 464 -364 528 -340 
+            LINE N 464 -352 528 -352 
+            RECTANGLE N 64 -384 464 380 
+            LINE N 64 96 0 96 
+            LINE N 64 160 0 160 
+            LINE N 64 224 0 224 
+            LINE N 464 -224 528 -224 
+            LINE N 464 -96 528 -96 
+            LINE N 464 -32 528 -32 
+            LINE N 464 32 528 32 
+            LINE N 464 96 528 96 
+            LINE N 464 160 528 160 
+            LINE N 464 224 528 224 
+            LINE N 464 -160 528 -160 
+            LINE N 464 288 528 288 
+            LINE N 464 352 528 352 
         END BLOCKDEF
         BEGIN BLOCK XLXI_6 cb16ce
             PIN C clk_cpu
@@ -915,32 +930,6 @@ BEGIN SCHEMATIC
             PIN debugY(7:0)
             PIN debugS(7:0)
         END BLOCK
-        BEGIN BLOCK XLXI_109 datamux
-            PIN clk clk_cpu
-            PIN reset reset
-            PIN cpu_next_rd XLXN_433
-            PIN cpu_next_we XLXN_434
-            PIN spi_ack spi_ack
-            PIN cpu_next_addr(15:0) cpu_addr(15:0)
-            PIN ram_data(7:0) ram_data(7:0)
-            PIN rom_data(7:0) rom_data(7:0)
-            PIN uart_data(7:0) uart_data(7:0)
-            PIN uart_status(7:0) uart_status(7:0)
-            PIN spi_data(7:0) spi_data(7:0)
-            PIN maxspi_data(7:0) maxspi_data(7:0)
-            PIN cpu_enable cpu_enable
-            PIN ram_we ram_we
-            PIN uart_rd uart_rd
-            PIN uart_load uart_load
-            PIN spi_wr spi_we
-            PIN spi_stb spi_stb
-            PIN maxspi_wr maxspi_wr
-            PIN cpu_di(7:0) cpu_di(7:0)
-            PIN maxspi_rd maxspi_rd
-            PIN gpio_wr gpio_wr
-            PIN gpio_rd gpio_rd
-            PIN gpio_data(7:0) gpio_data(7:0)
-        END BLOCK
         BEGIN BLOCK XLXI_102 vcc
             PIN P XLXN_222
         END BLOCK
@@ -1035,64 +1024,6 @@ BEGIN SCHEMATIC
         BEGIN BLOCK XLXI_596 inv
             PIN I flashspi_clk
             PIN O osram_clk
-        END BLOCK
-        BEGIN BLOCK XLXI_597 inv
-            PIN I flashspi_di
-            PIN O osram_data
-        END BLOCK
-        BEGIN BLOCK XLXI_487 buf
-            PIN I wheel1
-            PIN O
-        END BLOCK
-        BEGIN BLOCK XLXI_488 buf
-            PIN I wheel2
-            PIN O
-        END BLOCK
-        BEGIN BLOCK XLXI_489 buf
-            PIN I bump1
-            PIN O
-        END BLOCK
-        BEGIN BLOCK XLXI_490 buf
-            PIN I bump2
-            PIN O
-        END BLOCK
-        BEGIN BLOCK XLXI_491 buf
-            PIN I front_wheel
-            PIN O
-        END BLOCK
-        BEGIN BLOCK XLXI_492 buf
-            PIN I IR
-            PIN O
-        END BLOCK
-        BEGIN BLOCK XLXI_506 vcc
-            PIN P XLXN_1298
-        END BLOCK
-        BEGIN BLOCK XLXI_505 gnd
-            PIN G XLXN_1294
-        END BLOCK
-        BEGIN BLOCK XLXI_480 buf
-            PIN I cnt(5)
-            PIN O snd
-        END BLOCK
-        BEGIN BLOCK XLXI_479 buf
-            PIN I XLXN_1298
-            PIN O leds_power
-        END BLOCK
-        BEGIN BLOCK XLXI_478 buf
-            PIN I XLXN_1294
-            PIN O m2b
-        END BLOCK
-        BEGIN BLOCK XLXI_477 buf
-            PIN I XLXN_1294
-            PIN O m2a
-        END BLOCK
-        BEGIN BLOCK XLXI_476 buf
-            PIN I XLXN_1294
-            PIN O m1b
-        END BLOCK
-        BEGIN BLOCK XLXI_475 buf
-            PIN I XLXN_1294
-            PIN O m1a
         END BLOCK
         BEGIN BLOCK XLXI_634 gpin_buf
             PIN gpin(31:0) XLXN_1936(31:0)
@@ -1219,24 +1150,100 @@ BEGIN SCHEMATIC
             PIN gpio_ext_oe U38_OE
             PIN gpio_ext_dir U38_DIR
         END BLOCK
-        BEGIN BLOCK XLXI_643 stepper_ctrl
-            PIN clk
-            PIN reset
-            PIN relative
-            PIN start
-            PIN target_time(31:0)
-            PIN target_position(31:0)
-            PIN target_velocity(31:0)
-            PIN set_position
-            PIN data_in(31:0)
-            PIN end_position(31:0)
-            PIN end_velocity(31:0)
-            PIN done
-            PIN acc(31:0)
-            PIN dir
-            PIN step
-            PIN velocity(31:0)
-            PIN position(31:0)
+        BEGIN BLOCK XLXI_643 datamux
+            PIN steppers_data(7:0) steppers_data(7:0)
+            PIN clk clk_cpu
+            PIN reset reset
+            PIN cpu_next_rd XLXN_433
+            PIN cpu_next_we XLXN_434
+            PIN spi_data(7:0) spi_data(7:0)
+            PIN maxspi_data(7:0) maxspi_data(7:0)
+            PIN cpu_next_addr(15:0) cpu_addr(15:0)
+            PIN ram_data(7:0) ram_data(7:0)
+            PIN rom_data(7:0) rom_data(7:0)
+            PIN uart_data(7:0) uart_data(7:0)
+            PIN uart_status(7:0) uart_status(7:0)
+            PIN spi_ack spi_ack
+            PIN gpio_data(7:0) gpio_data(7:0)
+            PIN steppers_wr steppers_wr
+            PIN steppers_rd steppers_rd
+            PIN gpio_wr gpio_wr
+            PIN gpio_rd gpio_rd
+            PIN maxspi_wr maxspi_wr
+            PIN maxspi_rd maxspi_rd
+            PIN spi_wr spi_we
+            PIN spi_stb spi_stb
+            PIN uart_rd uart_rd
+            PIN uart_load uart_load
+            PIN ram_we ram_we
+            PIN cpu_enable cpu_enable
+            PIN cpu_di(7:0) cpu_di(7:0)
+        END BLOCK
+        BEGIN BLOCK XLXI_597 inv
+            PIN I flashspi_di
+            PIN O osram_data
+        END BLOCK
+        BEGIN BLOCK XLXI_649 inv
+            PIN I XLXN_2037
+            PIN O dir_y
+        END BLOCK
+        BEGIN BLOCK XLXI_650 inv
+            PIN I XLXN_2038
+            PIN O step_y
+        END BLOCK
+        BEGIN BLOCK XLXI_651 inv
+            PIN I XLXN_2039
+            PIN O dir_z
+        END BLOCK
+        BEGIN BLOCK XLXI_652 inv
+            PIN I XLXN_2040
+            PIN O step_z
+        END BLOCK
+        BEGIN BLOCK XLXI_653 inv
+            PIN I XLXN_2041
+            PIN O dir_a
+        END BLOCK
+        BEGIN BLOCK XLXI_654 inv
+            PIN I XLXN_2042
+            PIN O step_a
+        END BLOCK
+        BEGIN BLOCK XLXI_648 inv
+            PIN I XLXN_2036
+            PIN O step_x
+        END BLOCK
+        BEGIN BLOCK XLXI_647 inv
+            PIN I XLXN_2035
+            PIN O dir_x
+        END BLOCK
+        BEGIN BLOCK XLXI_655 inv
+            PIN I XLXN_2043
+            PIN O enable_xyz
+        END BLOCK
+        BEGIN BLOCK XLXI_656 inv
+            PIN I XLXN_2044
+            PIN O enable_a
+        END BLOCK
+        BEGIN BLOCK XLXI_644 steppers_module
+            PIN clk clk_cpu
+            PIN reset reset
+            PIN rd steppers_rd
+            PIN wr steppers_wr
+            PIN cpu_addr(7:0) cpu_addr(7:0)
+            PIN cpu_data_in(7:0) cpu_do(7:0)
+            PIN cpu_data_out(7:0) steppers_data(7:0)
+            PIN y_endstop y_endstop
+            PIN z_endstop z_endstop
+            PIN dir_x XLXN_2035
+            PIN step_x XLXN_2036
+            PIN dir_y XLXN_2037
+            PIN step_y XLXN_2038
+            PIN dir_z XLXN_2039
+            PIN step_z XLXN_2040
+            PIN dir_a XLXN_2041
+            PIN step_a XLXN_2042
+            PIN enable_xyz XLXN_2043
+            PIN enable_a XLXN_2044
+            PIN x_endstop x_endstop
         END BLOCK
     END NETLIST
     BEGIN SHEET 1 7609 5382
@@ -1459,66 +1466,52 @@ BEGIN SCHEMATIC
             END DISPLAY
         END BRANCH
         BEGIN BRANCH cpu_addr(15:0)
-            WIRE 1520 2144 1536 2144
-            WIRE 1536 2144 1648 2144
-            BEGIN DISPLAY 1536 2144 ATTR Name
-                ALIGNMENT SOFT-BCENTER
+            WIRE 1520 2128 1648 2128
+            BEGIN DISPLAY 1520 2128 ATTR Name
+                ALIGNMENT SOFT-RIGHT
             END DISPLAY
         END BRANCH
         BEGIN BRANCH reset
-            WIRE 1520 1952 1536 1952
-            WIRE 1536 1952 1648 1952
-            BEGIN DISPLAY 1536 1952 ATTR Name
-                ALIGNMENT SOFT-BCENTER
+            WIRE 1520 1936 1648 1936
+            BEGIN DISPLAY 1520 1936 ATTR Name
+                ALIGNMENT SOFT-RIGHT
             END DISPLAY
         END BRANCH
         BEGIN BRANCH clk_cpu
-            WIRE 1520 1888 1536 1888
-            WIRE 1536 1888 1648 1888
-            BEGIN DISPLAY 1536 1888 ATTR Name
-                ALIGNMENT SOFT-BCENTER
+            WIRE 1520 1872 1648 1872
+            BEGIN DISPLAY 1520 1872 ATTR Name
+                ALIGNMENT SOFT-RIGHT
             END DISPLAY
         END BRANCH
         BEGIN BRANCH ram_data(7:0)
-            WIRE 1440 2208 1520 2208
-            WIRE 1520 2208 1648 2208
-            BEGIN DISPLAY 1520 2208 ATTR Name
-                ALIGNMENT SOFT-BCENTER
+            WIRE 1440 2192 1648 2192
+            BEGIN DISPLAY 1440 2192 ATTR Name
+                ALIGNMENT SOFT-RIGHT
             END DISPLAY
         END BRANCH
         BEGIN BRANCH rom_data(7:0)
-            WIRE 1472 2272 1520 2272
-            WIRE 1520 2272 1648 2272
-            BEGIN DISPLAY 1520 2272 ATTR Name
-                ALIGNMENT SOFT-BCENTER
+            WIRE 1472 2256 1648 2256
+            BEGIN DISPLAY 1472 2256 ATTR Name
+                ALIGNMENT SOFT-RIGHT
             END DISPLAY
         END BRANCH
-        BEGIN BRANCH XLXN_433
-            WIRE 1040 1920 1344 1920
-            WIRE 1344 1920 1344 2016
-            WIRE 1344 2016 1648 2016
-        END BRANCH
         BEGIN BRANCH XLXN_434
-            WIRE 1040 1856 1328 1856
-            WIRE 1328 1856 1328 2080
-            WIRE 1328 2080 1648 2080
+            WIRE 1040 1856 1344 1856
+            WIRE 1344 1856 1344 2064
+            WIRE 1344 2064 1648 2064
         END BRANCH
         BEGIN BRANCH uart_status(7:0)
-            WIRE 1488 2400 1504 2400
-            WIRE 1504 2400 1648 2400
-            BEGIN DISPLAY 1504 2400 ATTR Name
-                ALIGNMENT SOFT-BCENTER
+            WIRE 1488 2384 1648 2384
+            BEGIN DISPLAY 1488 2384 ATTR Name
+                ALIGNMENT SOFT-RIGHT
             END DISPLAY
         END BRANCH
         BEGIN BRANCH uart_data(7:0)
-            WIRE 1488 2336 1504 2336
-            WIRE 1504 2336 1648 2336
-            BEGIN DISPLAY 1504 2336 ATTR Name
-                ALIGNMENT SOFT-BCENTER
+            WIRE 1488 2320 1648 2320
+            BEGIN DISPLAY 1488 2320 ATTR Name
+                ALIGNMENT SOFT-RIGHT
             END DISPLAY
         END BRANCH
-        BEGIN INSTANCE XLXI_109 1648 2496 R0
-        END INSTANCE
         BEGIN BRANCH XLXN_222
             WIRE 432 2080 432 2112
             WIRE 432 2112 624 2112
@@ -1543,53 +1536,10 @@ BEGIN SCHEMATIC
                 ALIGNMENT SOFT-BCENTER
             END DISPLAY
         END BRANCH
-        BEGIN BRANCH spi_data(7:0)
-            WIRE 1552 2528 1568 2528
-            WIRE 1568 2528 1648 2528
-            BEGIN DISPLAY 1568 2528 ATTR Name
-                ALIGNMENT SOFT-BCENTER
-            END DISPLAY
-        END BRANCH
         BEGIN BRANCH spi_ack
-            WIRE 1552 2464 1584 2464
-            WIRE 1584 2464 1648 2464
-            BEGIN DISPLAY 1584 2464 ATTR Name
-                ALIGNMENT SOFT-BCENTER
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH spi_we
-            WIRE 2144 2464 2192 2464
-            WIRE 2192 2464 2240 2464
-            BEGIN DISPLAY 2192 2464 ATTR Name
-                ALIGNMENT SOFT-BCENTER
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH spi_stb
-            WIRE 2144 2528 2192 2528
-            WIRE 2192 2528 2240 2528
-            BEGIN DISPLAY 2192 2528 ATTR Name
-                ALIGNMENT SOFT-BCENTER
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH uart_load
-            WIRE 2144 2336 2176 2336
-            WIRE 2176 2336 2224 2336
-            BEGIN DISPLAY 2176 2336 ATTR Name
-                ALIGNMENT SOFT-BCENTER
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH uart_rd
-            WIRE 2144 2400 2176 2400
-            WIRE 2176 2400 2224 2400
-            BEGIN DISPLAY 2176 2400 ATTR Name
-                ALIGNMENT SOFT-BCENTER
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH ram_we
-            WIRE 2144 2208 2176 2208
-            WIRE 2176 2208 2224 2208
-            BEGIN DISPLAY 2176 2208 ATTR Name
-                ALIGNMENT SOFT-BCENTER
+            WIRE 1552 2448 1648 2448
+            BEGIN DISPLAY 1552 2448 ATTR Name
+                ALIGNMENT SOFT-RIGHT
             END DISPLAY
         END BRANCH
         BEGIN BRANCH cpu_di(7:0)
@@ -1599,24 +1549,10 @@ BEGIN SCHEMATIC
                 ALIGNMENT SOFT-BCENTER
             END DISPLAY
         END BRANCH
-        BEGIN BRANCH cpu_di(7:0)
-            WIRE 2144 1888 2224 1888
-            WIRE 2224 1888 2240 1888
-            BEGIN DISPLAY 2224 1888 ATTR Name
-                ALIGNMENT SOFT-BCENTER
-            END DISPLAY
-        END BRANCH
         BEGIN BRANCH cpu_enable
             WIRE 576 1856 608 1856
             WIRE 608 1856 656 1856
             BEGIN DISPLAY 608 1856 ATTR Name
-                ALIGNMENT SOFT-BCENTER
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH cpu_enable
-            WIRE 2144 1952 2176 1952
-            WIRE 2176 1952 2240 1952
-            BEGIN DISPLAY 2176 1952 ATTR Name
                 ALIGNMENT SOFT-BCENTER
             END DISPLAY
         END BRANCH
@@ -1873,26 +1809,6 @@ BEGIN SCHEMATIC
         IOMARKER 1360 4704 SD_CLK R0 28
         IOMARKER 1360 4816 SD_DO R0 28
         IOMARKER 1360 4928 SD_CS R0 28
-        BEGIN BRANCH maxspi_data(7:0)
-            WIRE 1552 2592 1648 2592
-            BEGIN DISPLAY 1552 2592 ATTR Name
-                ALIGNMENT SOFT-RIGHT
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH maxspi_wr
-            WIRE 2144 2592 2176 2592
-            WIRE 2176 2592 2240 2592
-            BEGIN DISPLAY 2176 2592 ATTR Name
-                ALIGNMENT SOFT-BCENTER
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH maxspi_rd
-            WIRE 2144 2656 2160 2656
-            WIRE 2160 2656 2240 2656
-            BEGIN DISPLAY 2160 2656 ATTR Name
-                ALIGNMENT SOFT-BCENTER
-            END DISPLAY
-        END BRANCH
         BEGIN INSTANCE XLXI_507 3264 4800 R0
         END INSTANCE
         BEGIN BRANCH XLXN_1299(7:0)
@@ -1915,9 +1831,9 @@ BEGIN SCHEMATIC
         END BRANCH
         BEGIN BRANCH flashspi_di
             WIRE 3728 4768 3760 4768
-            WIRE 3760 4768 3760 5104
-            WIRE 3760 5104 3792 5104
             WIRE 3760 4768 3824 4768
+            WIRE 3760 4768 3760 5072
+            WIRE 3760 5072 3792 5072
         END BRANCH
         BEGIN BRANCH clk_cpu
             WIRE 3168 4320 3184 4320
@@ -2014,104 +1930,14 @@ BEGIN SCHEMATIC
             WIRE 4496 4064 4848 4064
         END BRANCH
         INSTANCE XLXI_596 3792 5008 R0
-        INSTANCE XLXI_597 3792 5136 R0
         BEGIN BRANCH osram_clk
-            WIRE 4016 4976 4096 4976
-        END BRANCH
-        BEGIN BRANCH osram_data
-            WIRE 4016 5104 4096 5104
+            WIRE 4016 4976 4064 4976
         END BRANCH
         IOMARKER 3184 4672 flashspi_do R180 28
-        IOMARKER 4096 4976 osram_clk R0 28
-        IOMARKER 4096 5104 osram_data R0 28
         IOMARKER 3824 4704 flashspi_clk R0 28
         IOMARKER 3824 4768 flashspi_di R0 28
         IOMARKER 4848 4064 osram_load R0 28
         IOMARKER 4864 4000 flashspi_ss R0 28
-        INSTANCE XLXI_487 3392 3200 R0
-        BEGIN BRANCH wheel1
-            WIRE 3248 3168 3392 3168
-        END BRANCH
-        INSTANCE XLXI_488 3392 3296 R0
-        BEGIN BRANCH wheel2
-            WIRE 3248 3264 3392 3264
-        END BRANCH
-        BEGIN BRANCH bump1
-            WIRE 3248 3360 3392 3360
-        END BRANCH
-        INSTANCE XLXI_489 3392 3392 R0
-        INSTANCE XLXI_490 3392 3488 R0
-        BEGIN BRANCH bump2
-            WIRE 3248 3456 3392 3456
-        END BRANCH
-        INSTANCE XLXI_491 3392 3584 R0
-        BEGIN BRANCH front_wheel
-            WIRE 3248 3552 3392 3552
-        END BRANCH
-        INSTANCE XLXI_492 3392 3680 R0
-        BEGIN BRANCH IR
-            WIRE 3248 3648 3392 3648
-        END BRANCH
-        BEGIN BRANCH cnt(5)
-            WIRE 4256 3744 4288 3744
-            WIRE 4288 3744 4384 3744
-            BEGIN DISPLAY 4288 3744 ATTR Name
-                ALIGNMENT SOFT-BCENTER
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH XLXN_1294
-            WIRE 3936 3216 4272 3216
-            WIRE 4272 3216 4272 3312
-            WIRE 4272 3312 4272 3408
-            WIRE 4272 3408 4272 3520
-            WIRE 4272 3520 4384 3520
-            WIRE 4272 3408 4384 3408
-            WIRE 4272 3312 4384 3312
-            WIRE 4272 3216 4384 3216
-            WIRE 3936 3216 3936 3360
-        END BRANCH
-        INSTANCE XLXI_506 4016 3616 R0
-        INSTANCE XLXI_505 3872 3488 R0
-        BEGIN BRANCH XLXN_1298
-            WIRE 4080 3616 4080 3632
-            WIRE 4080 3632 4384 3632
-        END BRANCH
-        INSTANCE XLXI_480 4384 3776 R0
-        BEGIN BRANCH snd
-            WIRE 4608 3744 4752 3744
-        END BRANCH
-        INSTANCE XLXI_479 4384 3664 R0
-        BEGIN BRANCH leds_power
-            WIRE 4608 3632 4752 3632
-        END BRANCH
-        INSTANCE XLXI_478 4384 3552 R0
-        BEGIN BRANCH m2b
-            WIRE 4608 3520 4752 3520
-        END BRANCH
-        INSTANCE XLXI_477 4384 3440 R0
-        BEGIN BRANCH m2a
-            WIRE 4608 3408 4752 3408
-        END BRANCH
-        INSTANCE XLXI_476 4384 3344 R0
-        BEGIN BRANCH m1b
-            WIRE 4608 3312 4752 3312
-        END BRANCH
-        INSTANCE XLXI_475 4384 3248 R0
-        BEGIN BRANCH m1a
-            WIRE 4608 3216 4752 3216
-        END BRANCH
-        IOMARKER 3248 3168 wheel1 R180 28
-        IOMARKER 3248 3264 wheel2 R180 28
-        IOMARKER 3248 3360 bump1 R180 28
-        IOMARKER 3248 3456 bump2 R180 28
-        IOMARKER 3248 3552 front_wheel R180 28
-        IOMARKER 3248 3648 IR R180 28
-        IOMARKER 4752 3744 snd R0 28
-        IOMARKER 4752 3632 leds_power R0 28
-        IOMARKER 4752 3520 m2b R0 28
-        IOMARKER 4752 3408 m2a R0 28
-        IOMARKER 4752 3312 m1b R0 28
-        IOMARKER 4752 3216 m1a R0 28
         BEGIN INSTANCE XLXI_634 3536 1120 R0
         END INSTANCE
         BEGIN BRANCH gpin0
@@ -2602,28 +2428,266 @@ BEGIN SCHEMATIC
                 ALIGNMENT SOFT-BCENTER
             END DISPLAY
         END BRANCH
+        BEGIN BRANCH XLXN_433
+            WIRE 1040 1920 1056 1920
+            WIRE 1056 1920 1056 2000
+            WIRE 1056 2000 1648 2000
+        END BRANCH
+        BEGIN INSTANCE XLXI_643 1648 2928 R0
+        END INSTANCE
+        BEGIN BRANCH spi_data(7:0)
+            WIRE 1552 2512 1648 2512
+            BEGIN DISPLAY 1552 2512 ATTR Name
+                ALIGNMENT SOFT-RIGHT
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH maxspi_data(7:0)
+            WIRE 1552 2576 1648 2576
+            BEGIN DISPLAY 1552 2576 ATTR Name
+                ALIGNMENT SOFT-RIGHT
+            END DISPLAY
+        END BRANCH
         BEGIN BRANCH gpio_data(7:0)
-            WIRE 1552 2720 1568 2720
-            WIRE 1568 2720 1648 2720
-            BEGIN DISPLAY 1568 2720 ATTR Name
-                ALIGNMENT SOFT-BCENTER
+            WIRE 1552 2704 1648 2704
+            BEGIN DISPLAY 1552 2704 ATTR Name
+                ALIGNMENT SOFT-RIGHT
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH cpu_di(7:0)
+            WIRE 2160 1872 2288 1872
+            BEGIN DISPLAY 2288 1872 ATTR Name
+                ALIGNMENT SOFT-LEFT
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH cpu_enable
+            WIRE 2160 1936 2240 1936
+            BEGIN DISPLAY 2240 1936 ATTR Name
+                ALIGNMENT SOFT-LEFT
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH ram_we
+            WIRE 2160 2192 2224 2192
+            BEGIN DISPLAY 2224 2192 ATTR Name
+                ALIGNMENT SOFT-LEFT
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH uart_load
+            WIRE 2160 2320 2224 2320
+            BEGIN DISPLAY 2224 2320 ATTR Name
+                ALIGNMENT SOFT-LEFT
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH uart_rd
+            WIRE 2160 2384 2224 2384
+            BEGIN DISPLAY 2224 2384 ATTR Name
+                ALIGNMENT SOFT-LEFT
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH spi_we
+            WIRE 2160 2448 2288 2448
+            BEGIN DISPLAY 2288 2448 ATTR Name
+                ALIGNMENT SOFT-LEFT
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH spi_stb
+            WIRE 2160 2512 2288 2512
+            BEGIN DISPLAY 2288 2512 ATTR Name
+                ALIGNMENT SOFT-LEFT
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH maxspi_wr
+            WIRE 2160 2576 2288 2576
+            BEGIN DISPLAY 2288 2576 ATTR Name
+                ALIGNMENT SOFT-LEFT
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH maxspi_rd
+            WIRE 2160 2640 2272 2640
+            BEGIN DISPLAY 2272 2640 ATTR Name
+                ALIGNMENT SOFT-LEFT
             END DISPLAY
         END BRANCH
         BEGIN BRANCH gpio_wr
-            WIRE 2144 2720 2176 2720
-            WIRE 2176 2720 2240 2720
-            BEGIN DISPLAY 2176 2720 ATTR Name
-                ALIGNMENT SOFT-BCENTER
+            WIRE 2160 2704 2288 2704
+            BEGIN DISPLAY 2288 2704 ATTR Name
+                ALIGNMENT SOFT-LEFT
             END DISPLAY
         END BRANCH
         BEGIN BRANCH gpio_rd
-            WIRE 2144 2784 2176 2784
-            WIRE 2176 2784 2240 2784
-            BEGIN DISPLAY 2176 2784 ATTR Name
+            WIRE 2160 2768 2288 2768
+            BEGIN DISPLAY 2288 2768 ATTR Name
+                ALIGNMENT SOFT-LEFT
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH steppers_wr
+            WIRE 2160 2832 2192 2832
+            WIRE 2192 2832 2272 2832
+            BEGIN DISPLAY 2192 2832 ATTR Name
                 ALIGNMENT SOFT-BCENTER
             END DISPLAY
         END BRANCH
-        BEGIN INSTANCE XLXI_643 5904 3552 R0
+        BEGIN BRANCH steppers_rd
+            WIRE 2160 2896 2208 2896
+            WIRE 2208 2896 2256 2896
+            BEGIN DISPLAY 2208 2896 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH steppers_data(7:0)
+            WIRE 1552 2832 1600 2832
+            WIRE 1600 2832 1648 2832
+            BEGIN DISPLAY 1600 2832 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH osram_data
+            WIRE 4016 5072 4064 5072
+        END BRANCH
+        IOMARKER 4064 5072 osram_data R0 28
+        INSTANCE XLXI_597 3792 5104 R0
+        IOMARKER 4064 4976 osram_clk R0 28
+        BEGIN BRANCH steppers_data(7:0)
+            WIRE 3776 1936 3840 1936
+            WIRE 3840 1936 3872 1936
+            BEGIN DISPLAY 3840 1936 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH dir_y
+            WIRE 4096 2192 4192 2192
+        END BRANCH
+        BEGIN BRANCH step_y
+            WIRE 4096 2256 4192 2256
+        END BRANCH
+        BEGIN BRANCH dir_z
+            WIRE 4096 2320 4192 2320
+        END BRANCH
+        BEGIN BRANCH step_z
+            WIRE 4096 2384 4192 2384
+        END BRANCH
+        BEGIN BRANCH dir_a
+            WIRE 4096 2448 4192 2448
+        END BRANCH
+        BEGIN BRANCH step_a
+            WIRE 4096 2512 4192 2512
+        END BRANCH
+        INSTANCE XLXI_649 3872 2224 R0
+        INSTANCE XLXI_650 3872 2288 R0
+        INSTANCE XLXI_651 3872 2352 R0
+        INSTANCE XLXI_652 3872 2416 R0
+        INSTANCE XLXI_653 3872 2480 R0
+        INSTANCE XLXI_654 3872 2544 R0
+        INSTANCE XLXI_648 3872 2160 R0
+        BEGIN BRANCH step_x
+            WIRE 4096 2128 4192 2128
+        END BRANCH
+        INSTANCE XLXI_647 3872 2096 R0
+        BEGIN BRANCH dir_x
+            WIRE 4096 2064 4192 2064
+        END BRANCH
+        BEGIN BRANCH enable_a
+            WIRE 4096 2640 4192 2640
+        END BRANCH
+        BEGIN BRANCH enable_xyz
+            WIRE 4096 2576 4192 2576
+        END BRANCH
+        INSTANCE XLXI_655 3872 2608 R0
+        INSTANCE XLXI_656 3872 2672 R0
+        BEGIN BRANCH XLXN_2035
+            WIRE 3776 2064 3872 2064
+        END BRANCH
+        BEGIN BRANCH XLXN_2036
+            WIRE 3776 2128 3872 2128
+        END BRANCH
+        BEGIN BRANCH XLXN_2037
+            WIRE 3776 2192 3872 2192
+        END BRANCH
+        BEGIN BRANCH XLXN_2038
+            WIRE 3776 2256 3872 2256
+        END BRANCH
+        BEGIN BRANCH XLXN_2039
+            WIRE 3776 2320 3872 2320
+        END BRANCH
+        BEGIN BRANCH XLXN_2040
+            WIRE 3776 2384 3872 2384
+        END BRANCH
+        BEGIN BRANCH XLXN_2041
+            WIRE 3776 2448 3872 2448
+        END BRANCH
+        BEGIN BRANCH XLXN_2042
+            WIRE 3776 2512 3872 2512
+        END BRANCH
+        BEGIN BRANCH XLXN_2043
+            WIRE 3776 2576 3872 2576
+        END BRANCH
+        BEGIN BRANCH XLXN_2044
+            WIRE 3776 2640 3872 2640
+        END BRANCH
+        BEGIN BRANCH z_endstop
+            WIRE 3152 2512 3248 2512
+        END BRANCH
+        BEGIN BRANCH y_endstop
+            WIRE 3152 2448 3248 2448
+        END BRANCH
+        BEGIN BRANCH cpu_do(7:0)
+            WIRE 3152 2256 3168 2256
+            WIRE 3168 2256 3248 2256
+            BEGIN DISPLAY 3168 2256 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH cpu_addr(7:0)
+            WIRE 3152 2192 3184 2192
+            WIRE 3184 2192 3248 2192
+            BEGIN DISPLAY 3184 2192 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH steppers_wr
+            WIRE 3152 2128 3200 2128
+            WIRE 3200 2128 3248 2128
+            BEGIN DISPLAY 3200 2128 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH steppers_rd
+            WIRE 3152 2064 3184 2064
+            WIRE 3184 2064 3248 2064
+            BEGIN DISPLAY 3184 2064 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH reset
+            WIRE 3152 2000 3168 2000
+            WIRE 3168 2000 3248 2000
+            BEGIN DISPLAY 3168 2000 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH clk_cpu
+            WIRE 3152 1936 3184 1936
+            WIRE 3184 1936 3248 1936
+            BEGIN DISPLAY 3184 1936 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        BEGIN INSTANCE XLXI_644 3248 2288 R0
         END INSTANCE
+        BEGIN BRANCH x_endstop
+            WIRE 3152 2384 3248 2384
+        END BRANCH
+        IOMARKER 4192 2256 step_y R0 28
+        IOMARKER 4192 2192 dir_y R0 28
+        IOMARKER 4192 2320 dir_z R0 28
+        IOMARKER 4192 2384 step_z R0 28
+        IOMARKER 4192 2448 dir_a R0 28
+        IOMARKER 4192 2512 step_a R0 28
+        IOMARKER 4192 2128 step_x R0 28
+        IOMARKER 4192 2064 dir_x R0 28
+        IOMARKER 4192 2640 enable_a R0 28
+        IOMARKER 4192 2576 enable_xyz R0 28
+        IOMARKER 3152 2448 y_endstop R180 28
+        IOMARKER 3152 2512 z_endstop R180 28
+        IOMARKER 3152 2384 x_endstop R180 28
     END SHEET
 END SCHEMATIC

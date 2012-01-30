@@ -81,7 +81,7 @@ always @(reset or target_position or target_time or start or position or quotine
             next_remaining_time <= remaining_time - 1;
             next_auto_stop_timer <= auto_stop_timer;
             next_direction <= direction;
-            next_done <= 0;
+            next_done <= done;
 				next_restart <= restart;
 
             if (reset)
@@ -93,6 +93,7 @@ always @(reset or target_position or target_time or start or position or quotine
 						  next_auto_stop_timer <= 0;
 						  next_orig_target <= 0;
 						  next_restart <= 0;
+						  next_done <= 0;
                 end
             else
 						case (state)
@@ -133,6 +134,7 @@ always @(reset or target_position or target_time or start or position or quotine
 											next_state <= `STATE_CALC1;
 											next_remaining_time <= {1'b0, target_time};
 											next_restart <= 0;
+											next_done <= 0;
 										end
 									else
 										begin
@@ -153,6 +155,7 @@ always @(reset or target_position or target_time or start or position or quotine
 										begin
 											next_restart <= 1;
 											next_state <= `STATE_IDLE;
+											next_done <= 1;
 										end
 									else
 										next_state <= `STATE_CALC2;
@@ -163,6 +166,7 @@ always @(reset or target_position or target_time or start or position or quotine
 										begin
 											next_restart <= 1;
 											next_state <= `STATE_IDLE;
+											next_done <= 1;
 										end
 									else
 										if (divide_done)
@@ -174,7 +178,7 @@ always @(reset or target_position or target_time or start or position or quotine
 												else
 													begin
 														next_velocity <= -{1'b0 , quotinent[31:1]};
-													end;
+													end
 												next_state <= `STATE_MOVING;
 											end
 								end
@@ -184,6 +188,7 @@ always @(reset or target_position or target_time or start or position or quotine
 										begin
 											next_restart <= 1;
 											next_state <= `STATE_IDLE;
+											next_done <= 1;
 										end
 									else
 										if (remaining_time[32] == 1)

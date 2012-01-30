@@ -1615,11 +1615,11 @@
 		1614: dataOut <= 8'h8C;
 		1615: dataOut <= 8'h70;
 		1616: dataOut <= 8'h05;
-		1617: dataOut <= 8'h01;
-		1618: dataOut <= 8'h76;
-		1619: dataOut <= 8'h92;
-		1620: dataOut <= 8'h94;
-		1621: dataOut <= 8'h68;
+		1617: dataOut <= 8'h41;
+		1618: dataOut <= 8'hE6;
+		1619: dataOut <= 8'h42;
+		1620: dataOut <= 8'h44;
+		1621: dataOut <= 8'h30;
 		1622: dataOut <= 8'h53;
 		1623: dataOut <= 8'h44;
 		1624: dataOut <= 8'h20;

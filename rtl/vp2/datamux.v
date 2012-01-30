@@ -18,6 +18,7 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
+
 module datamux(
 	input clk,
 	input reset,
@@ -54,7 +55,12 @@ module datamux(
 	//gpio
 	input [7:0] gpio_data,
 	output reg gpio_wr,
-	output reg gpio_rd
+	output reg gpio_rd,
+
+	//steppers
+	input [7:0] steppers_data,
+	output reg steppers_wr,
+	output reg steppers_rd
 );
 
 reg [3:0] input_select;
@@ -74,6 +80,8 @@ always @(cpu_next_addr, cpu_next_rd, cpu_next_we, cpu_enable)
 		maxspi_rd <= 0;
 		gpio_wr <= 0;
 		gpio_rd <= 0;
+		steppers_wr <= 0;
+		steppers_rd <= 0;
 		if (cpu_next_addr[15] == 0) // RAM 0x0000 - 0x7FFF
 			begin
 				if (cpu_next_we == 1)
@@ -132,6 +140,18 @@ always @(cpu_next_addr, cpu_next_rd, cpu_next_we, cpu_enable)
 						gpio_rd <= 1;
 					end
 			end
+		else if (cpu_next_addr[15:8] == 8'hD4) // steppers 0xD400 - 0xD4FF
+			begin
+				next_input_select <= 8;
+				if (cpu_next_we == 1)
+					begin
+						steppers_wr <= 1;
+					end
+				if (cpu_next_rd == 1)
+					begin
+						steppers_rd <= 1;
+					end
+			end
 	end
 	
 always @(posedge clk)
@@ -140,7 +160,7 @@ always @(posedge clk)
 		uart_data_reg <= uart_data;
 	end
 	
-always @(input_select, ram_data, rom_data, uart_data_reg, uart_status, spi_data, maxspi_data, gpio_data)
+always @(input_select, ram_data, rom_data, uart_data_reg, uart_status, spi_data, maxspi_data, gpio_data, steppers_data)
 	begin
 		if (input_select == 1)
 			cpu_di <= ram_data;
@@ -156,6 +176,8 @@ always @(input_select, ram_data, rom_data, uart_data_reg, uart_status, spi_data,
 			cpu_di <= maxspi_data;
 		else if (input_select == 7)
 			cpu_di <= gpio_data;
+		else if (input_select == 8)
+			cpu_di <= steppers_data;
 		else
 			cpu_di <= 0;
 	end
