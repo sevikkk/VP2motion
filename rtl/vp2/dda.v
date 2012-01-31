@@ -50,16 +50,17 @@ reg [5:0] state;
 `define STATE_CALC2 2
 `define STATE_MOVING 3
 
+
 reg direction;
 reg signed [32:0] remaining_time;
-reg [16:0] auto_stop_timer;
+reg [16:0] timer;
 reg signed [31:0] orig_target;
 reg restart;
 
 reg [5:0] next_state;
 reg next_direction;
 reg signed [32:0] next_remaining_time;
-reg [16:0] next_auto_stop_timer;
+reg [16:0] next_timer;
 reg signed [31:0] next_orig_target;
 reg next_restart;
 
@@ -68,9 +69,12 @@ reg [31:0] next_divisor;
 reg [31:0] next_divident;
 reg [31:0] next_start_divide;
 
+reg recalc;
+reg next_recalc;
+
 reg signed [31:0] next_velocity;
 
-always @(reset or target_position or target_time or start or position or quotinent or divide_done or state or remaining_time or direction or velocity or auto_stop_timer or relative or restart)
+always @(reset or target_position or target_time or start or position or quotinent or divide_done or state or remaining_time or direction or velocity or timer or relative or restart or recalc)
 	begin
             next_state <= state;
             next_direction <= 0;
@@ -79,10 +83,11 @@ always @(reset or target_position or target_time or start or position or quotine
             next_start_divide <= 0;
             next_velocity <= velocity;
             next_remaining_time <= remaining_time - 1;
-            next_auto_stop_timer <= auto_stop_timer;
+            next_timer <= timer;
             next_direction <= direction;
             next_done <= done;
 				next_restart <= restart;
+				next_recalc <= 0;
 
             if (reset)
                 begin
@@ -90,7 +95,7 @@ always @(reset or target_position or target_time or start or position or quotine
                     next_remaining_time <= 0;
                     next_velocity <= 0;
                     next_direction <= 0;
-						  next_auto_stop_timer <= 0;
+						  next_timer <= 0;
 						  next_orig_target <= 0;
 						  next_restart <= 0;
 						  next_done <= 0;
@@ -99,11 +104,14 @@ always @(reset or target_position or target_time or start or position or quotine
 						case (state)
 							`STATE_IDLE: 
 								begin
-									if (start || restart) 
+									if (start || restart || recalc) 
 										begin
-											if (relative)
+											if (relative && start)
 												begin
-												   next_orig_target <= position + target_position;
+													next_orig_target <= position + target_position;
+													next_divisor <= target_time;
+													next_remaining_time <= {1'b0, target_time};
+
 													if (target_position > 0) 
 														begin
 															next_direction <= 0;
@@ -115,9 +123,12 @@ always @(reset or target_position or target_time or start or position or quotine
 															next_divident <= -target_position;
 														end
 												end
-											else
+											else if (start)
 												begin
-												   next_orig_target <= target_position;
+													next_orig_target <= target_position;
+													next_divisor <= target_time;
+													next_remaining_time <= {1'b0, target_time};
+
 													if (target_position > position) 
 														begin
 															next_direction <= 0;
@@ -129,23 +140,36 @@ always @(reset or target_position or target_time or start or position or quotine
 															next_divident <= position - target_position;
 														end
 												end
-											next_divisor <= target_time;
+											else
+												begin
+													next_divisor <= remaining_time[31:0];
+
+													if (orig_target > position) 
+														begin
+															next_direction <= 0;
+															next_divident <= orig_target - position;
+														end
+													else
+														begin
+															next_direction <= 1;
+															next_divident <= position - orig_target;
+														end
+												end
 											next_start_divide <= 1;
 											next_state <= `STATE_CALC1;
-											next_remaining_time <= {1'b0, target_time};
 											next_restart <= 0;
 											next_done <= 0;
 										end
 									else
 										begin
 											next_remaining_time <= 0;
-											if (auto_stop_timer == 1)
+											if (timer == 1)
 												begin
 													next_velocity <= 0;
 												end
-											if (auto_stop_timer != 0)
+											if (timer != 0)
 												begin
-													next_auto_stop_timer <= auto_stop_timer - 1;
+													next_timer <= timer - 1;
 												end
 										end
 								end
@@ -180,6 +204,7 @@ always @(reset or target_position or target_time or start or position or quotine
 														next_velocity <= -{1'b0 , quotinent[31:1]};
 													end
 												next_state <= `STATE_MOVING;
+												next_timer <= 5000;
 											end
 								end
                     `STATE_MOVING:
@@ -195,7 +220,16 @@ always @(reset or target_position or target_time or start or position or quotine
 											begin
 												next_state <= `STATE_IDLE;
 												next_done <= 1;
-												next_auto_stop_timer <= 1000; // 100000; // 1ms
+												next_timer <= 1000; // 100000; // 1ms
+											end
+										else
+											begin
+												next_timer <= timer - 1;
+												if (timer == 0)
+													begin
+														next_recalc <= 1;
+														next_state <= `STATE_IDLE;
+													end
 											end
 								end
 						endcase
@@ -211,9 +245,10 @@ always @(posedge clk)
             divisor <= next_divisor;
             divident <= next_divident;
             start_divide <= next_start_divide;
-            auto_stop_timer <= next_auto_stop_timer;
+            timer <= next_timer;
             orig_target <= next_orig_target;
 				restart <= next_restart;
+				recalc <= next_recalc;
 				
             end_position <= next_orig_target;
             end_velocity <= next_velocity;

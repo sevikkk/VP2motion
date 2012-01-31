@@ -129,7 +129,6 @@ set export_files {
           "step_gen.sym" 
           "step_gen.v" 
           "stepper_ctrl.sch" 
-          "stepper_ctrl.sym" 
           "steppers_module.sch" 
           "steppers_module.sym" 
           "test_debounce.v" 

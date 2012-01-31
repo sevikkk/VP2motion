@@ -40,7 +40,67 @@ reg signed [31:0] next_position;
 reg signed [31:0] cur_velocity;
 reg signed [31:0] next_cur_velocity;
 
-always @(reset or velocity or set_position or acc)
+reg [9:0] cycle;
+reg [9:0] next_cycle;
+
+wire [31:0] max_accel;
+
+assign max_accel = 200;
+
+always @(reset or cur_velocity or cycle or set_position)
+	begin
+		if (reset)
+			begin
+				next_cur_velocity <= 0;
+				next_cycle <= 0;
+			end
+		else if (set_position)
+			begin
+				next_cur_velocity <= 0;
+				next_cycle <= 0;
+			end
+		else
+			begin
+				next_cycle <= cycle + 1;
+				next_cur_velocity <= cur_velocity;
+				if (cycle == 999)
+					begin
+						next_cycle <= 0;
+						if (cur_velocity > velocity)
+							begin
+								if (cur_velocity - velocity < max_accel)
+									begin
+										next_cur_velocity <= velocity;
+									end
+								else
+									begin
+										next_cur_velocity <= cur_velocity - max_accel;
+									end
+							end
+						else if (cur_velocity < velocity)
+							begin
+								if (velocity - cur_velocity < max_accel)
+									begin
+										next_cur_velocity <= velocity;
+									end
+								else
+									begin
+										next_cur_velocity <= cur_velocity + max_accel;
+									end
+							end
+							
+					end
+			end
+	end
+
+always @(posedge clk)
+	begin
+		cycle <= next_cycle;
+		cur_velocity <= next_cur_velocity;
+	end
+
+
+always @(reset or cur_velocity or set_position or acc)
 	begin
 		if (reset)
 			begin
@@ -52,13 +112,13 @@ always @(reset or velocity or set_position or acc)
 			end
 		else
 			begin
-				next_acc <= acc + velocity;
+				next_acc <= acc + cur_velocity;
 			end
 	end
 
-always @(acc or next_acc or velocity)
+always @(acc or next_acc or cur_velocity)
 	begin
-		next_dir <= velocity[31];
+		next_dir <= cur_velocity[31];
 		do_step <= next_acc[31] ^ acc[31];
 	end
 				

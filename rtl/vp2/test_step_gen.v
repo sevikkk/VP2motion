@@ -51,14 +51,13 @@ module test_step_gen;
 		#100;
 		reset = 1;
 		
-		#17;
+		#37;
 		
 		reset = 0;
-		velocity = 32'h40000;
-		#1000000;
-		velocity = -32'h40000;
-		
-        
+		velocity = 824633;
+		#100000000;
+		velocity = -824633;
+		        
 		// Add stimulus here
 
 	end
@@ -68,9 +67,9 @@ module test_step_gen;
 		forever
 			begin
 				clk = 1;
-				#5;
+				#10;
 				clk = 0;
-				#5;
+				#10;
 			end;
 	end
 		  
