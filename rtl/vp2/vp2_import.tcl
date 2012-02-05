@@ -778,6 +778,7 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "TxUnit.sym" 
       "TxUnit.vhd" 
       "clkUnit.vhd" 
+      "clkUnit38400.vhd" 
       "clockgen.sym" 
       "clockgen.xaw" 
       "clockgen_arwz.ucf" 
@@ -815,14 +816,6 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "memory_maped_if.v" 
       "mmu.sym" 
       "mmu.v" 
-      "mult_steps.asy" 
-      "mult_steps.ngc" 
-      "mult_steps.sym" 
-      "mult_steps.v" 
-      "mult_steps.veo" 
-      "mult_steps.vhd" 
-      "mult_steps.vho" 
-      "mult_steps.xco" 
       "pio.sym" 
       "readWriteSDBlock.v" 
       "readWriteSPIWireData.sym" 
@@ -856,7 +849,6 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "top.sch" 
       "top.sym" 
       "top.ucf" 
-      "top_guide.ncd" 
       "uart_lib.vhd" 
       "wishBoneBI.v"}
   INFO "Copying files from \"$staging_area\" to \"$working_area\""
@@ -908,6 +900,7 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "TxFifoBI.v" 
       "TxUnit.vhd" 
       "clkUnit.vhd" 
+      "clkUnit38400.vhd" 
       "clockgen.xaw" 
       "cpu_ram.v" 
       "cpu_rom.v" 
@@ -927,7 +920,6 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "loader.v" 
       "memory_maped_if.v" 
       "mmu.v" 
-      "mult_steps.xco" 
       "readWriteSDBlock.v" 
       "readWriteSPIWireData.v" 
       "sendCmd.v" 
@@ -981,13 +973,6 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "gpout_buf.sym" 
       "memory_maped_if.sym" 
       "mmu.sym" 
-      "mult_steps.asy" 
-      "mult_steps.ngc" 
-      "mult_steps.sym" 
-      "mult_steps.v" 
-      "mult_steps.veo" 
-      "mult_steps.vhd" 
-      "mult_steps.vho" 
       "pio.sym" 
       "readWriteSPIWireData.sym" 
       "sdram.sym" 
@@ -996,8 +981,7 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "spi_slave.sym" 
       "step_gen.sym" 
       "steppers_module.sym" 
-      "top.sym" 
-      "top_guide.ncd"}
+      "top.sym"}
 
   set origination 2
 
@@ -1592,7 +1576,9 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
      $opts_stream WriteString "1"
      $opts_stream WriteString "2"
      $opts_stream WriteString "0"
-     $opts_stream WriteString "0"
+     $opts_stream WriteString "2"
+     $opts_stream WriteString "top_guide.ncd"
+     $opts_stream WriteString "xpower.vcd"
      $opts_stream WriteString "1"
    RestoreSourceControlOptions "$project_file" $opts_stream
    Release $opts_stream
