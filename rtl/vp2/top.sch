@@ -15,7 +15,7 @@ BEGIN SCHEMATIC
         SIGNAL reset
         SIGNAL uart_data(7:0)
         SIGNAL uart_rd
-        SIGNAL uart_load
+        SIGNAL uart_wr
         SIGNAL spi_data(7:0)
         SIGNAL spi_ack
         SIGNAL spi_we
@@ -43,7 +43,6 @@ BEGIN SCHEMATIC
         SIGNAL flashspi_ss
         SIGNAL cpu_addr(15:0)
         SIGNAL XLXN_433
-        SIGNAL uart_status(7:0)
         SIGNAL XLXN_222
         SIGNAL cpu_addr_reg(15:0)
         SIGNAL cpu_do_reg(7:0)
@@ -169,15 +168,6 @@ BEGIN SCHEMATIC
         SIGNAL SD_CLK
         SIGNAL SD_DO
         SIGNAL SD_CS
-        SIGNAL XLXN_114
-        SIGNAL XLXN_113
-        SIGNAL uart_status(1)
-        SIGNAL uart_status(0)
-        SIGNAL UART_TX
-        SIGNAL uart_status(4)
-        SIGNAL uart_status(3)
-        SIGNAL uart_status(2)
-        SIGNAL UART_RX
         SIGNAL XLXN_1299(7:0)
         SIGNAL flashspi_clk
         SIGNAL flashspi_di
@@ -214,6 +204,16 @@ BEGIN SCHEMATIC
         SIGNAL y_endstop
         SIGNAL x_endstop
         SIGNAL XLXN_2184
+        SIGNAL UART_TX
+        SIGNAL UART_RX
+        SIGNAL RS485_RX
+        SIGNAL XLXN_2186
+        SIGNAL XLXN_2188
+        SIGNAL XLXN_2189
+        SIGNAL RS485_TX
+        SIGNAL XLXN_2191
+        SIGNAL RS485_DE
+        SIGNAL XLXN_2194
         PORT Input clk
         PORT Input SYSRESET
         PORT Output led1
@@ -326,8 +326,6 @@ BEGIN SCHEMATIC
         PORT Output SD_CLK
         PORT Output SD_DO
         PORT Output SD_CS
-        PORT Output UART_TX
-        PORT Input UART_RX
         PORT Output flashspi_clk
         PORT Output flashspi_di
         PORT Output osram_load
@@ -346,6 +344,11 @@ BEGIN SCHEMATIC
         PORT Input z_endstop
         PORT Input y_endstop
         PORT Input x_endstop
+        PORT Output UART_TX
+        PORT Input UART_RX
+        PORT Input RS485_RX
+        PORT Output RS485_TX
+        PORT Output RS485_DE
         BEGIN BLOCKDEF cb16ce
             TIMESTAMP 2000 1 1 10 10 10
             LINE N 384 -192 320 -192 
@@ -455,41 +458,6 @@ BEGIN SCHEMATIC
             LINE N 320 -96 384 -96 
             RECTANGLE N 320 -44 384 -20 
             LINE N 320 -32 384 -32 
-        END BLOCKDEF
-        BEGIN BLOCKDEF TxUnit
-            TIMESTAMP 2008 11 17 12 23 22
-            RECTANGLE N 64 -320 320 0 
-            LINE N 64 -288 0 -288 
-            LINE N 64 -224 0 -224 
-            LINE N 64 -160 0 -160 
-            LINE N 64 -96 0 -96 
-            RECTANGLE N 0 -44 64 -20 
-            LINE N 64 -32 0 -32 
-            LINE N 320 -288 384 -288 
-            LINE N 320 -160 384 -160 
-            LINE N 320 -32 384 -32 
-        END BLOCKDEF
-        BEGIN BLOCKDEF ClkUnit
-            TIMESTAMP 2008 11 17 12 23 6
-            RECTANGLE N 64 -128 320 0 
-            LINE N 64 -96 0 -96 
-            LINE N 64 -32 0 -32 
-            LINE N 320 -96 384 -96 
-            LINE N 320 -32 384 -32 
-        END BLOCKDEF
-        BEGIN BLOCKDEF RxUnit
-            TIMESTAMP 2008 11 17 12 23 16
-            RECTANGLE N 64 -320 320 0 
-            LINE N 64 -288 0 -288 
-            LINE N 64 -224 0 -224 
-            LINE N 64 -160 0 -160 
-            LINE N 64 -96 0 -96 
-            LINE N 64 -32 0 -32 
-            LINE N 320 -288 384 -288 
-            LINE N 320 -208 384 -208 
-            LINE N 320 -128 384 -128 
-            RECTANGLE N 320 -60 384 -36 
-            LINE N 320 -48 384 -48 
         END BLOCKDEF
         BEGIN BLOCKDEF spiMaster
             TIMESTAMP 2008 12 7 20 53 36
@@ -780,7 +748,7 @@ BEGIN SCHEMATIC
             LINE N 464 352 528 352 
         END BLOCKDEF
         BEGIN BLOCKDEF datamux
-            TIMESTAMP 2012 2 5 12 55 22
+            TIMESTAMP 2012 2 7 9 17 20
             RECTANGLE N 64 -1728 432 0 
             LINE N 64 -1696 0 -1696 
             LINE N 64 -1632 0 -1632 
@@ -794,8 +762,6 @@ BEGIN SCHEMATIC
             LINE N 64 -1312 0 -1312 
             RECTANGLE N 0 -1260 64 -1236 
             LINE N 64 -1248 0 -1248 
-            RECTANGLE N 0 -1196 64 -1172 
-            LINE N 64 -1184 0 -1184 
             LINE N 64 -1120 0 -1120 
             RECTANGLE N 0 -1068 64 -1044 
             LINE N 64 -1056 0 -1056 
@@ -849,6 +815,41 @@ BEGIN SCHEMATIC
             LINE N 432 -224 496 -224 
             LINE N 432 -416 496 -416 
             LINE N 432 -32 496 -32 
+        END BLOCKDEF
+        BEGIN BLOCKDEF uarts_module
+            TIMESTAMP 2012 2 7 8 59 7
+            LINE N 464 -96 528 -96 
+            LINE N 464 -32 528 -32 
+            LINE N 464 -224 528 -224 
+            LINE N 464 -160 528 -160 
+            LINE N 464 -352 528 -352 
+            LINE N 464 -288 528 -288 
+            LINE N 464 -480 528 -480 
+            LINE N 464 -416 528 -416 
+            RECTANGLE N 464 -556 528 -532 
+            LINE N 464 -544 528 -544 
+            LINE N 64 -96 0 -96 
+            LINE N 64 -224 0 -224 
+            LINE N 64 -352 0 -352 
+            LINE N 64 -480 0 -480 
+            LINE N 64 -928 0 -928 
+            LINE N 64 -864 0 -864 
+            LINE N 64 -800 0 -800 
+            LINE N 64 -736 0 -736 
+            RECTANGLE N 0 -684 64 -660 
+            LINE N 64 -672 0 -672 
+            RECTANGLE N 0 -620 64 -596 
+            LINE N 64 -608 0 -608 
+            RECTANGLE N 0 -556 64 -532 
+            LINE N 64 -544 0 -544 
+            RECTANGLE N 464 -940 528 -916 
+            LINE N 464 -928 528 -928 
+            LINE N 64 -576 464 -576 
+            RECTANGLE N 64 -964 464 -4 
+            LINE N 64 -512 464 -512 
+            LINE N 64 -384 464 -384 
+            LINE N 64 -256 464 -256 
+            LINE N 64 -128 464 -128 
         END BLOCKDEF
         BEGIN BLOCK XLXI_6 cb16ce
             PIN C clk_cpu
@@ -1091,7 +1092,6 @@ BEGIN SCHEMATIC
             PIN ram_data(7:0) ram_data(7:0)
             PIN rom_data(7:0) rom_data(7:0)
             PIN uart_data(7:0) uart_data(7:0)
-            PIN uart_status(7:0) uart_status(7:0)
             PIN spi_ack spi_ack
             PIN spi_data(7:0) spi_data(7:0)
             PIN maxspi_data(7:0) maxspi_data(7:0)
@@ -1114,7 +1114,7 @@ BEGIN SCHEMATIC
             PIN spi_wr spi_we
             PIN spi_stb spi_stb
             PIN uart_rd uart_rd
-            PIN uart_load uart_load
+            PIN uart_wr uart_wr
             PIN dev4_wr steppers_wr
             PIN dev4_rd steppers_rd
             PIN dev4_stb
@@ -1154,33 +1154,6 @@ BEGIN SCHEMATIC
             PIN spiDataOut SD_DO
             PIN spiCS_n SD_CS
             PIN data_o(7:0) spi_data(7:0)
-        END BLOCK
-        BEGIN BLOCK XLXI_55 ClkUnit
-            PIN SysClk clk_cpu
-            PIN Reset reset
-            PIN EnableRx XLXN_113
-            PIN EnableTx XLXN_114
-        END BLOCK
-        BEGIN BLOCK XLXI_57 TxUnit
-            PIN Clk clk_cpu
-            PIN Reset reset
-            PIN Enable XLXN_114
-            PIN Load uart_load
-            PIN DataO(7:0) cpu_do(7:0)
-            PIN TxD UART_TX
-            PIN TRegE uart_status(0)
-            PIN TBufE uart_status(1)
-        END BLOCK
-        BEGIN BLOCK XLXI_56 RxUnit
-            PIN Clk clk_cpu
-            PIN Reset reset
-            PIN Enable XLXN_113
-            PIN RxD UART_RX
-            PIN RD uart_rd
-            PIN FErr uart_status(2)
-            PIN OErr uart_status(3)
-            PIN DRdy uart_status(4)
-            PIN DataIn(7:0) uart_data(7:0)
         END BLOCK
         BEGIN BLOCK XLXI_507 readWriteSPIWireData
             PIN clk clk_cpu
@@ -1288,6 +1261,33 @@ BEGIN SCHEMATIC
         END BLOCK
         BEGIN BLOCK XLXI_685 vcc
             PIN P XLXN_2184
+        END BLOCK
+        BEGIN BLOCK XLXI_686 uarts_module
+            PIN txd3
+            PIN tx_idle3
+            PIN txd2
+            PIN tx_idle2
+            PIN txd1 RS485_TX
+            PIN tx_idle1 XLXN_2191
+            PIN txd0 UART_TX
+            PIN tx_idle0
+            PIN misc_out(7:0)
+            PIN rxd3
+            PIN rxd2
+            PIN rxd1 RS485_RX
+            PIN rxd0 UART_RX
+            PIN clk clk_cpu
+            PIN reset reset
+            PIN rd uart_rd
+            PIN wr uart_wr
+            PIN cpu_data_in(7:0) cpu_do(7:0)
+            PIN cpu_addr(7:0) cpu_addr(7:0)
+            PIN misc_in(7:0)
+            PIN cpu_data_out(7:0) uart_data(7:0)
+        END BLOCK
+        BEGIN BLOCK XLXI_688 inv
+            PIN I XLXN_2191
+            PIN O RS485_DE
         END BLOCK
     END NETLIST
     BEGIN SHEET 1 7609 5382
@@ -1543,12 +1543,6 @@ BEGIN SCHEMATIC
             WIRE 1040 1856 1344 1856
             WIRE 1344 1856 1344 2064
             WIRE 1344 2064 1648 2064
-        END BRANCH
-        BEGIN BRANCH uart_status(7:0)
-            WIRE 1488 2384 1648 2384
-            BEGIN DISPLAY 1488 2384 ATTR Name
-                ALIGNMENT SOFT-RIGHT
-            END DISPLAY
         END BRANCH
         BEGIN BRANCH uart_data(7:0)
             WIRE 1488 2320 1648 2320
@@ -2329,118 +2323,6 @@ BEGIN SCHEMATIC
         IOMARKER 1232 3568 SD_CLK R0 28
         IOMARKER 1232 3680 SD_DO R0 28
         IOMARKER 1232 3792 SD_CS R0 28
-        BEGIN BRANCH XLXN_114
-            WIRE 624 4720 880 4720
-        END BRANCH
-        BEGIN INSTANCE XLXI_55 240 4752 R0
-        END INSTANCE
-        BEGIN BRANCH clk_cpu
-            WIRE 192 4656 240 4656
-            BEGIN DISPLAY 192 4656 ATTR Name
-                ALIGNMENT SOFT-RIGHT
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH reset
-            WIRE 192 4720 240 4720
-            BEGIN DISPLAY 192 4720 ATTR Name
-                ALIGNMENT SOFT-RIGHT
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH XLXN_113
-            WIRE 624 4656 672 4656
-            WIRE 672 4304 672 4656
-            WIRE 672 4304 880 4304
-        END BRANCH
-        BEGIN INSTANCE XLXI_57 880 4880 R0
-        END INSTANCE
-        BEGIN BRANCH uart_status(1)
-            WIRE 1264 4848 1360 4848
-            BEGIN DISPLAY 1360 4848 ATTR Name
-                ALIGNMENT SOFT-LEFT
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH uart_status(0)
-            WIRE 1264 4720 1360 4720
-            BEGIN DISPLAY 1360 4720 ATTR Name
-                ALIGNMENT SOFT-LEFT
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH uart_load
-            WIRE 848 4784 880 4784
-            BEGIN DISPLAY 848 4784 ATTR Name
-                ALIGNMENT SOFT-RIGHT
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH cpu_do(7:0)
-            WIRE 848 4848 880 4848
-            BEGIN DISPLAY 848 4848 ATTR Name
-                ALIGNMENT SOFT-RIGHT
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH reset
-            WIRE 848 4656 880 4656
-            BEGIN DISPLAY 848 4656 ATTR Name
-                ALIGNMENT SOFT-RIGHT
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH clk_cpu
-            WIRE 848 4592 880 4592
-            BEGIN DISPLAY 848 4592 ATTR Name
-                ALIGNMENT SOFT-RIGHT
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH UART_TX
-            WIRE 1264 4592 1392 4592
-        END BRANCH
-        BEGIN BRANCH uart_rd
-            WIRE 848 4432 880 4432
-            BEGIN DISPLAY 848 4432 ATTR Name
-                ALIGNMENT SOFT-RIGHT
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH uart_data(7:0)
-            WIRE 1264 4416 1360 4416
-            BEGIN DISPLAY 1360 4416 ATTR Name
-                ALIGNMENT SOFT-LEFT
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH uart_status(4)
-            WIRE 1264 4336 1360 4336
-            BEGIN DISPLAY 1360 4336 ATTR Name
-                ALIGNMENT SOFT-LEFT
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH uart_status(3)
-            WIRE 1264 4256 1360 4256
-            BEGIN DISPLAY 1360 4256 ATTR Name
-                ALIGNMENT SOFT-LEFT
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH uart_status(2)
-            WIRE 1264 4176 1360 4176
-            BEGIN DISPLAY 1360 4176 ATTR Name
-                ALIGNMENT SOFT-LEFT
-            END DISPLAY
-        END BRANCH
-        BEGIN INSTANCE XLXI_56 880 4464 R0
-        END INSTANCE
-        BEGIN BRANCH clk_cpu
-            WIRE 848 4176 880 4176
-            BEGIN DISPLAY 848 4176 ATTR Name
-                ALIGNMENT SOFT-RIGHT
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH reset
-            WIRE 848 4240 880 4240
-            BEGIN DISPLAY 848 4240 ATTR Name
-                ALIGNMENT SOFT-RIGHT
-            END DISPLAY
-        END BRANCH
-        BEGIN BRANCH UART_RX
-            WIRE 576 4368 880 4368
-        END BRANCH
-        IOMARKER 1392 4592 UART_TX R0 28
-        IOMARKER 576 4368 UART_RX R180 28
         BEGIN INSTANCE XLXI_507 2016 4848 R0
         END INSTANCE
         BEGIN BRANCH XLXN_1299(7:0)
@@ -2737,11 +2619,89 @@ BEGIN SCHEMATIC
                 ALIGNMENT SOFT-LEFT
             END DISPLAY
         END BRANCH
-        BEGIN BRANCH uart_load
+        BEGIN BRANCH uart_wr
             WIRE 2144 2384 2208 2384
             BEGIN DISPLAY 2208 2384 ATTR Name
                 ALIGNMENT SOFT-LEFT
             END DISPLAY
         END BRANCH
+        BEGIN INSTANCE XLXI_686 672 5024 R0
+        END INSTANCE
+        BEGIN BRANCH UART_TX
+            WIRE 1200 4544 1344 4544
+        END BRANCH
+        BEGIN BRANCH UART_RX
+            WIRE 592 4544 672 4544
+        END BRANCH
+        IOMARKER 1344 4544 UART_TX R0 28
+        IOMARKER 592 4544 UART_RX R180 28
+        BEGIN BRANCH clk_cpu
+            WIRE 576 4096 608 4096
+            WIRE 608 4096 672 4096
+            BEGIN DISPLAY 608 4096 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH reset
+            WIRE 576 4160 624 4160
+            WIRE 624 4160 672 4160
+            BEGIN DISPLAY 624 4160 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH uart_rd
+            WIRE 576 4224 608 4224
+            WIRE 608 4224 672 4224
+            BEGIN DISPLAY 608 4224 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH uart_wr
+            WIRE 576 4288 624 4288
+            WIRE 624 4288 672 4288
+            BEGIN DISPLAY 624 4288 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH cpu_do(7:0)
+            WIRE 576 4352 624 4352
+            WIRE 624 4352 672 4352
+            BEGIN DISPLAY 624 4352 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH cpu_addr(7:0)
+            WIRE 576 4416 624 4416
+            WIRE 624 4416 672 4416
+            BEGIN DISPLAY 624 4416 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH uart_data(7:0)
+            WIRE 1200 4096 1280 4096
+            WIRE 1280 4096 1312 4096
+            BEGIN DISPLAY 1280 4096 ATTR Name
+                ALIGNMENT SOFT-BCENTER
+            END DISPLAY
+        END BRANCH
+        BEGIN BRANCH RS485_RX
+            WIRE 592 4672 656 4672
+            WIRE 656 4672 672 4672
+        END BRANCH
+        BEGIN BRANCH RS485_TX
+            WIRE 1200 4672 1216 4672
+            WIRE 1216 4672 1344 4672
+        END BRANCH
+        BEGIN BRANCH XLXN_2191
+            WIRE 1200 4736 1248 4736
+        END BRANCH
+        INSTANCE XLXI_688 1248 4768 R0
+        BEGIN BRANCH RS485_DE
+            WIRE 1472 4736 1488 4736
+            WIRE 1488 4736 1504 4736
+        END BRANCH
+        IOMARKER 592 4672 RS485_RX R180 28
+        IOMARKER 1344 4672 RS485_TX R0 28
+        IOMARKER 1504 4736 RS485_DE R0 28
     END SHEET
 END SCHEMATIC

@@ -37,9 +37,8 @@ module datamux(
 	
 	// uart
 	input [7:0] uart_data,
-	input [7:0] uart_status,
 	output reg uart_rd,
-	output reg uart_load,
+	output reg uart_wr,
 		
 	// SDCard spi controller
 	input spi_ack,
@@ -88,14 +87,13 @@ module datamux(
 
 reg [3:0] input_select;
 reg [3:0] next_input_select;
-reg [7:0] uart_data_reg;
 reg next_cpu_enable;
 
 always @(cpu_next_addr, cpu_next_rd, cpu_next_we, cpu_enable)
 	begin
 		ram_we <= 0;
 		uart_rd <= 0;
-		uart_load <= 0;
+		uart_wr <= 0;
 		next_input_select <= 0;
 		spi_wr <= 0;
 		spi_stb <= 0;
@@ -122,35 +120,28 @@ always @(cpu_next_addr, cpu_next_rd, cpu_next_we, cpu_enable)
 		
 		if (cpu_next_addr[15] == 0) // RAM 0x0000 - 0x7FFF
 			begin
+				next_input_select <= 1;
 				if (cpu_next_we == 1)
 					ram_we <= 1;
-				else
-					next_input_select <= 1;
 			end
 		else if (cpu_next_addr[15:13] == 7) // ROM 0xE000 - 0xFFFF
 			next_input_select <= 2;
 		else if (cpu_next_addr[15:8] == 8'hD0) // UART 0xD000 - 0xD0FF
 			begin
-				if (cpu_next_addr[0] == 0) // 0xD000 - UART_DATA, read - read rx data, write - write tx data
-					begin
-						if (cpu_next_we == 0)
-							begin
-								next_input_select <= 3;
-								uart_rd <= 1;
-							end
-						else
-							uart_load <= 1;
-					end
-				else  // 0xD001 - UART_STATUS
-					if (cpu_next_we == 0)
-						next_input_select <= 4;
+				next_input_select <= 3;
+				if (cpu_next_rd == 1)
+					uart_rd <= 1;
+				if (cpu_next_we == 1)
+					uart_wr <= 1;
 			end
 		else if (cpu_next_addr[15:8] == 8'hD1) // SPI 0xD100 - 0xD1FF
 			begin
-				spi_stb <= 1;
 				next_input_select <= 5;
+				if (cpu_next_rd == 1)
+					spi_stb <= 1;
 				if (cpu_next_we == 1)
 					begin
+						spi_stb <= 1;
 						spi_wr <= 1;
 					end
 			end
@@ -158,25 +149,17 @@ always @(cpu_next_addr, cpu_next_rd, cpu_next_we, cpu_enable)
 			begin
 				next_input_select <= 6;
 				if (cpu_next_we == 1)
-					begin
-						maxspi_wr <= 1;
-					end
+					maxspi_wr <= 1;
 				if (cpu_next_rd == 1)
-					begin
-						maxspi_rd <= 1;
-					end
+					maxspi_rd <= 1;
 			end
 		else if (cpu_next_addr[15:8] == 8'hD3) // GPIO 0xD300 - 0xD3FF
 			begin
 				next_input_select <= 7;
 				if (cpu_next_we == 1)
-					begin
-						gpio_wr <= 1;
-					end
+					gpio_wr <= 1;
 				if (cpu_next_rd == 1)
-					begin
-						gpio_rd <= 1;
-					end
+					gpio_rd <= 1;
 			end
 		else if (cpu_next_addr[15:8] == 8'hD4) // dev4 0xD400 - 0xD4FF
 			begin
@@ -239,19 +222,16 @@ always @(cpu_next_addr, cpu_next_rd, cpu_next_we, cpu_enable)
 always @(posedge clk)
 	begin
 		input_select <= next_input_select;
-		uart_data_reg <= uart_data;
 	end
 	
-always @(input_select, ram_data, rom_data, uart_data_reg, uart_status, spi_data, maxspi_data, gpio_data, dev4_data, dev5_data, dev6_data, dev7_data)
+always @(input_select, ram_data, rom_data, uart_data, spi_data, maxspi_data, gpio_data, dev4_data, dev5_data, dev6_data, dev7_data)
 	begin
 		if (input_select == 1)
 			cpu_di <= ram_data;
 		else if (input_select == 2)
 			cpu_di <= rom_data;
 		else if (input_select == 3)
-			cpu_di <= uart_data_reg;
-		else if (input_select == 4)
-			cpu_di <= uart_status;
+			cpu_di <= uart_data;
 		else if (input_select == 5)
 			cpu_di <= spi_data;
 		else if (input_select == 6)

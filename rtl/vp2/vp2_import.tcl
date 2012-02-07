@@ -769,6 +769,7 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
   set import_files { 
       "6502_sync.vhd" 
       "ClkUnit.sym" 
+      "ClkUnit38400.sym" 
       "RxFifo.v" 
       "RxFifoBI.v" 
       "RxUnit.sym" 
@@ -801,6 +802,8 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "dpMem_dc.v" 
       "eth_rx.sym" 
       "eth_tx.sym" 
+      "fifo32.sym" 
+      "fifo32.v" 
       "fifoRTL.v" 
       "gpin_buf.sym" 
       "gpin_buf.v" 
@@ -845,11 +848,18 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "test_stepper_ctrl.v" 
       "test_steppers_module.v" 
       "test_top.v" 
+      "test_uart.v" 
       "timescale.v" 
       "top.sch" 
       "top.sym" 
       "top.ucf" 
+      "top_guide.ncd" 
+      "uart.sch" 
+      "uart_cpu_if.sym" 
+      "uart_cpu_if.v" 
       "uart_lib.vhd" 
+      "uarts_module.sch" 
+      "uarts_module.sym" 
       "wishBoneBI.v"}
   INFO "Copying files from \"$staging_area\" to \"$working_area\""
   # Must be in the staging directory before calling CopyIn.
@@ -911,6 +921,7 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "debounce.v" 
       "div_steps.v" 
       "dpMem_dc.v" 
+      "fifo32.v" 
       "fifoRTL.v" 
       "gpin_buf.v" 
       "gpio_buf.v" 
@@ -941,10 +952,14 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "test_stepper_ctrl.v" 
       "test_steppers_module.v" 
       "test_top.v" 
+      "test_uart.v" 
       "timescale.v" 
       "top.sch" 
       "top.ucf" 
+      "uart.sch" 
+      "uart_cpu_if.v" 
       "uart_lib.vhd" 
+      "uarts_module.sch" 
       "wishBoneBI.v"}
 
   HandleException {
@@ -953,6 +968,7 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
 
   set imported_files { 
       "ClkUnit.sym" 
+      "ClkUnit38400.sym" 
       "RxUnit.sym" 
       "TxUnit.sym" 
       "clockgen.sym" 
@@ -967,6 +983,7 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "div_steps.sym" 
       "eth_rx.sym" 
       "eth_tx.sym" 
+      "fifo32.sym" 
       "gpin_buf.sym" 
       "gpio_buf.sym" 
       "gpio_ctrl.sym" 
@@ -981,7 +998,10 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "spi_slave.sym" 
       "step_gen.sym" 
       "steppers_module.sym" 
-      "top.sym"}
+      "top.sym" 
+      "top_guide.ncd" 
+      "uart_cpu_if.sym" 
+      "uarts_module.sym"}
 
   set origination 2
 
@@ -998,7 +1018,7 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
       "A" "" "" "" "PROPEXT_xilxSynthAddBufg_virtex2" "16" 
       "A" "" "" "" "PROPEXT_xilxSynthMaxFanout_virtex2" "500" 
       "A" "" "" "" "PROP_AutoGenFile" "false" 
-      "A" "" "" "" "PROP_BehavioralSimTop" "Module|stepper_ctrl_stepper_ctrl_sch_tb" 
+      "A" "" "" "" "PROP_BehavioralSimTop" "Module|uart_sch_tb" 
       "A" "" "" "" "PROP_CPLDFitkeepio" "false" 
       "A" "" "" "" "PROP_CompxlibAbelLib" "true" 
       "A" "" "" "" "PROP_CompxlibCPLDDetLib" "true" 
@@ -1576,9 +1596,7 @@ proc import { {working_area ""} {staging_area ""} { srcctrl_comp 0 } } {
      $opts_stream WriteString "1"
      $opts_stream WriteString "2"
      $opts_stream WriteString "0"
-     $opts_stream WriteString "2"
-     $opts_stream WriteString "top_guide.ncd"
-     $opts_stream WriteString "xpower.vcd"
+     $opts_stream WriteString "0"
      $opts_stream WriteString "1"
    RestoreSourceControlOptions "$project_file" $opts_stream
    Release $opts_stream

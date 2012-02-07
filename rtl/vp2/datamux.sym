@@ -1,7 +1,7 @@
 VERSION 5
 BEGIN SYMBOL datamux
 SYMBOLTYPE BLOCK
-TIMESTAMP 2012 2 5 12 55 22
+TIMESTAMP 2012 2 7 9 17 20
 SYMATTR VeriModel "datamux"
 SYMPIN 0 -1696 Input clk
 SYMPIN 0 -1632 Input reset
@@ -11,7 +11,6 @@ SYMPIN 0 -1440 Input cpu_next_addr(15:0)
 SYMPIN 0 -1376 Input ram_data(7:0)
 SYMPIN 0 -1312 Input rom_data(7:0)
 SYMPIN 0 -1248 Input uart_data(7:0)
-SYMPIN 0 -1184 Input uart_status(7:0)
 SYMPIN 0 -1120 Input spi_ack
 SYMPIN 0 -1056 Input spi_data(7:0)
 SYMPIN 0 -992 Input maxspi_data(7:0)
@@ -34,7 +33,7 @@ SYMPIN 496 -928 Output maxspi_rd
 SYMPIN 496 -1120 Output spi_wr
 SYMPIN 496 -1056 Output spi_stb
 SYMPIN 496 -1248 Output uart_rd
-SYMPIN 496 -1184 Output uart_load
+SYMPIN 496 -1184 Output uart_wr
 SYMPIN 496 -736 Output dev4_wr
 SYMPIN 496 -672 Output dev4_rd
 SYMPIN 496 -608 Output dev4_stb
@@ -84,11 +83,6 @@ BEGIN DISPLAY 72 -1248 PIN uart_data(7:0) ATTR PinName
 END DISPLAY
 RECTANGLE N 0 -1260 64 -1236 
 LINE N 64 -1248 0 -1248 
-BEGIN DISPLAY 72 -1184 PIN uart_status(7:0) ATTR PinName
-    FONT 24 "Arial"
-END DISPLAY
-RECTANGLE N 0 -1196 64 -1172 
-LINE N 64 -1184 0 -1184 
 BEGIN DISPLAY 72 -1120 PIN spi_ack ATTR PinName
     FONT 24 "Arial"
 END DISPLAY
@@ -195,7 +189,7 @@ BEGIN DISPLAY 424 -1248 PIN uart_rd ATTR PinName
     FONT 24 "Arial"
 END DISPLAY
 LINE N 432 -1248 496 -1248 
-BEGIN DISPLAY 424 -1184 PIN uart_load ATTR PinName
+BEGIN DISPLAY 424 -1184 PIN uart_wr ATTR PinName
     ALIGNMENT RIGHT
     FONT 24 "Arial"
 END DISPLAY

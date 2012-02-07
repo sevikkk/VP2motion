@@ -40,11 +40,14 @@ library work;
 -- Baud rate generator
 -------------------------------------------------------------------------------
 entity ClkUnit38400 is
-  port (
-     SysClk   : in  Std_Logic;  -- System Clock
-     EnableRx : out Std_Logic;  -- Control signal
-     EnableTx : out Std_Logic;  -- Control signal
-     Reset    : in  Std_Logic); -- Reset input
+	port (
+		SysClk   : in  Std_Logic;  -- System Clock
+		EnableRx : out Std_Logic;  -- Control signal
+		EnableTx : out Std_Logic;  -- Control signal
+		Reset    : in  Std_Logic; -- Reset input
+		Divider  : in Std_Logic_Vector(15 downto 0)
+	);  -- Control signal
+
 end entity; --================== End of entity ==============================--
 -------------------------------------------------------------------------------
 -- Architecture for Baud rate generator Unit
@@ -55,29 +58,29 @@ architecture Behaviour of ClkUnit38400 is
   -----------------------------------------------------------------------------
   signal tmpEnRX   : Std_Logic;
   signal tmpEnTX   : Std_Logic;
+  
 begin
   -----------------------------------------------------------------------------
   -- Provides the EnableRX signal, at ~ 155 KHz
   -----------------------------------------------------------------------------
-  DivClk166 : process(SysClk,Reset)
-     constant CntOne : unsigned(7 downto 0) := "00000001";
-     variable Cnt166  : unsigned(7 downto 0);
+  DivClk166 : process(SysClk,Reset,Divider)
+     constant CntOne : unsigned(15 downto 0) := "0000000000000001";
+     variable Cnt166  : unsigned(15 downto 0);
   begin
-     if Rising_Edge(SysClk) then
-        if Reset = '1' then
-           Cnt166 := "00000000";
-           tmpEnRX <= '0';
-        else
-           Cnt166 := Cnt166 + CntOne;
-        end if;
-        case Cnt166 is
-             when "01010001" =>
-                tmpEnRX <= '1';
-                Cnt166 := "00000000";
-             when others =>
-                tmpEnRX <= '0';
-        end case;
-     end if;
+		if Rising_Edge(SysClk) then
+			if Reset = '1' then
+				Cnt166 := "0000000000000000";
+				tmpEnRX <= '0';
+			else
+				Cnt166 := Cnt166 + CntOne;
+			end if;
+			if Cnt166 >= unsigned(Divider) then
+				tmpEnRX <= '1';
+				Cnt166 := "0000000000000000";
+			else
+				tmpEnRX <= '0';
+			end if;
+		end if;
   end process;
   -----------------------------------------------------------------------------
   -- Provides the EnableTX signal, at 9.6 KHz

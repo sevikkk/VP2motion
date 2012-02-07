@@ -151,6 +151,10 @@ NET "x_endstop"  LOC = "W2"  ;
 NET "y_endstop"  LOC = "Y2"  ; 
 NET "z_endstop"  LOC = "V5"  ; 
 
+NET "RS485_RX"  LOC = "N8"  ; 
+NET "RS485_TX"  LOC = "G15"  ; 
+NET "RS485_DE"  LOC = "F15"  ; 
+
 #PACE: Start of PACE Area Constraints
 
 #PACE: Start of PACE Prohibit Constraints
