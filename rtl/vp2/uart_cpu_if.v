@@ -67,6 +67,27 @@ always @(posedge clk)
 		misc_in_reg <= misc_in_reg1;
 	end
 
+reg [15:0] timer_reg_ms;
+reg [15:0] timer_reg_ticks;
+
+always @(posedge clk)
+	begin
+		if (reset)
+			begin
+				timer_reg_ticks <= 0;
+				timer_reg_ms <= 0;
+			end
+		else if (timer_reg_ticks != 49999)
+			begin
+				timer_reg_ticks <= timer_reg_ticks + 1;
+			end
+		else
+			begin
+				timer_reg_ticks <= 0;
+				timer_reg_ms <= timer_reg_ms + 1;
+			end
+	end
+
 always @(posedge clk)
 	begin
 		uart0_tx_wr <= 0;
@@ -122,6 +143,11 @@ always @(posedge clk)
 					
 					128: cpu_data_out <= misc_out;
 					129: cpu_data_out <= misc_in_reg;
+
+					144: cpu_data_out <= timer_reg_ticks[7:0];
+					145: cpu_data_out <= timer_reg_ticks[15:8];
+					146: cpu_data_out <= timer_reg_ms[7:0];
+					147: cpu_data_out <= timer_reg_ms[15:8];
 				endcase
 			end
 		else if (wr)
@@ -154,7 +180,6 @@ always @(posedge clk)
 					128: misc_out <= cpu_data_out;
 				endcase
 			end
-			
 	end
 
 endmodule
