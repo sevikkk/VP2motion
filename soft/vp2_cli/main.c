@@ -6,138 +6,13 @@
 #include <ctype.h>
 #include "cmdline.h"
 
-#define REG(x) (*((volatile char *)(x)))
-#define REG32(x) (*((volatile uint32_t *)(x)))
+#include "io.h"
+#include "io_uart.h"
+#include "io_sd.h"
+#include "io_maxspi.h"
+#include "io_steppers.h"
 
-#define UART_DATA REG(0xD000)
-#define UART_STATUS REG(0xD001)
-#define		UART_STATUS_TREGE	0x01
-#define		UART_STATUS_TBUFE	0x02
-#define		UART_STATUS_FERR	0x04
-#define		UART_STATUS_OERR	0x08
-#define		UART_STATUS_DRDY	0x10
-
-#define SPI_VERSION REG(0xD100)
-#define SPI_CONTROL REG(0xD101)
-#define SPI_TRANS_TYPE REG(0xD102)
-#define SPI_TRANS_CTRL REG(0xD103)
-#define SPI_TRANS_STS REG(0xD104)
-#define SPI_TRANS_ERROR REG(0xD105)
-#define SPI_DIRECT_DATA REG(0xD106)
-#define SPI_SD_ADDR0 REG(0xD107)
-#define SPI_SD_ADDR1 REG(0xD108)
-#define SPI_SD_ADDR2 REG(0xD109)
-#define SPI_SD_ADDR3 REG(0xD10A)
-#define SPI_CLK_DEL REG(0xD10B)
-#define SPI_RXFIFO_DATA REG(0xD110)
-#define SPI_RXFIFO_STATUS REG(0xD111)
-#define SPI_RXFIFO_COUNT1 REG(0xD112)
-#define SPI_RXFIFO_COUNT2 REG(0xD113)
-#define SPI_RXFIFO_CONTROL REG(0xD114)
-#define SPI_TXFIFO_DATA REG(0xD120)
-#define SPI_TXFIFO_STATUS REG(0xD121)
-#define SPI_TXFIFO_COUNT1 REG(0xD122)
-#define SPI_TXFIFO_COUNT2 REG(0xD123)
-#define SPI_TXFIFO_CONTROL REG(0xD124)
-
-#define MAXSPI_DATA REG(0xD200)
-#define MAXSPI_STATUS REG(0xD201)
-#define 	MAXSPI_STATUS_SS 0x01
-#define 	MAXSPI_STATUS_RXRDY 0x02
-#define 	MAXSPI_STATUS_TXFULL 0x04
-#define 	MAXSPI_STATUS_TXEMPTY 0x08
-#define 	MAXSPI_STATUS_DEVNUM 0x30
-#define 	MAXSPI_STATUS_DEVNUM_SHIFT 4
-#define MAXSPI_DELAY REG(0xD202)
-
-#define STEPPERS_OUT_SELECT1 REG(0xD400)
-#define STEPPERS_OUT_SELECT2 REG(0xD401)
-
-#define STEPPERS_IN_SELECT REG(0xD402)
-#define 	STEPPERS_IN_LOOP 0
-#define 	STEPPERS_IN_X_CUR_POS 1
-#define 	STEPPERS_IN_X_CUR_VEL 2
-#define 	STEPPERS_IN_X_END_POS 3
-#define 	STEPPERS_IN_X_END_VEL 4
-#define 	STEPPERS_IN_Y_CUR_POS 5
-#define 	STEPPERS_IN_Y_CUR_VEL 6
-#define 	STEPPERS_IN_Y_END_POS 7
-#define 	STEPPERS_IN_Y_END_VEL 8
-#define 	STEPPERS_IN_Z_CUR_POS 9
-#define 	STEPPERS_IN_Z_CUR_VEL 10
-#define 	STEPPERS_IN_Z_END_POS 11
-#define 	STEPPERS_IN_Z_END_VEL 12
-#define 	STEPPERS_IN_A_CUR_POS 13
-#define 	STEPPERS_IN_A_CUR_VEL 14
-#define 	STEPPERS_IN_A_END_POS 15
-#define 	STEPPERS_IN_A_END_VEL 16
-#define 	STEPPERS_IN_X_ENDSTOP_POS 17
-#define 	STEPPERS_IN_X_ENDSTOP_BOUNCE 18 
-#define 	STEPPERS_IN_Y_ENDSTOP_POS 19
-#define 	STEPPERS_IN_Y_ENDSTOP_BOUNCE 20
-#define 	STEPPERS_IN_Z_ENDSTOP_POS 21
-#define 	STEPPERS_IN_Z_ENDSTOP_BOUNCE 22
-#define 	STEPPERS_IN_ENDSTOP_CYCLES 23
-
-#define STEPPERS_SET_GEN REG(0xD403)
-#define 	STEPPERS_SET_X_START 0
-#define 	STEPPERS_SET_X_SET_POS 1
-#define 	STEPPERS_SET_X_SET_TARGET_TIME 2
-#define 	STEPPERS_SET_X_SET_TARGET_POS 3
-#define 	STEPPERS_SET_X_SET_TARGET_VEL 4
-#define 	STEPPERS_SET_Y_START 5
-#define 	STEPPERS_SET_Y_SET_POS 6
-#define 	STEPPERS_SET_Y_SET_TARGET_TIME 7
-#define 	STEPPERS_SET_Y_SET_TARGET_POS 8
-#define 	STEPPERS_SET_Y_SET_TARGET_VEL 9
-#define 	STEPPERS_SET_Z_START 10
-#define 	STEPPERS_SET_Z_SET_POS 11
-#define 	STEPPERS_SET_Z_SET_TARGET_TIME 12
-#define 	STEPPERS_SET_Z_SET_TARGET_POS 13
-#define 	STEPPERS_SET_Z_SET_TARGET_VEL 14
-#define 	STEPPERS_SET_A_START 15
-#define 	STEPPERS_SET_A_SET_POS 16
-#define 	STEPPERS_SET_A_SET_TARGET_TIME 17
-#define 	STEPPERS_SET_A_SET_TARGET_POS 18
-#define 	STEPPERS_SET_A_SET_TARGET_VEL 19
-#define 	STEPPERS_SET_DEBOUNCE_UNLOCK 20
-#define 	STEPPERS_SET_DEBOUNCE_SET_TIMEOUT 21
-
-#define STEPPERS_CAPTURE REG(0xD404)
-#define STEPPERS_MISC_IN0 REG(0xD408)
-#define		STEPPERS_MISC_IN0_DONE_X 1
-#define		STEPPERS_MISC_IN0_DONE_Y 2
-#define		STEPPERS_MISC_IN0_DONE_Z 4
-#define		STEPPERS_MISC_IN0_DONE_A 8
-#define STEPPERS_MISC_IN1 REG(0xD409)
-#define		STEPPERS_MISC_IN1_END_X 1
-#define		STEPPERS_MISC_IN1_END_CHG_X 2
-#define		STEPPERS_MISC_IN1_END_Y 4
-#define		STEPPERS_MISC_IN1_END_CHG_Y 8
-#define		STEPPERS_MISC_IN1_END_Z 16
-#define		STEPPERS_MISC_IN1_END_CHG_Z 32
-#define STEPPERS_MISC_IN2 REG(0xD40A)
-#define STEPPERS_MISC_IN3 REG(0xD40B)
-#define STEPPERS_MISC_OUT0 REG(0xD40C)
-#define		STEPPERS_MISC_OUT0_REL_X 1
-#define		STEPPERS_MISC_OUT0_REL_Y 2
-#define		STEPPERS_MISC_OUT0_REL_Z 4
-#define		STEPPERS_MISC_OUT0_REL_A 8
-#define STEPPERS_MISC_OUT1 REG(0xD40D)
-#define		STEPPERS_MISC_OUT1_ENABLE_XYZ 1
-#define		STEPPERS_MISC_OUT1_ENABLE_A 2
-#define STEPPERS_MISC_OUT2 REG(0xD40E)
-#define		STEPPERS_MISC_OUT2_INVERT_DIR_X 1
-#define		STEPPERS_MISC_OUT2_INVERT_DIR_Y 2
-#define		STEPPERS_MISC_OUT2_INVERT_DIR_Z 4
-#define		STEPPERS_MISC_OUT2_INVERT_DIR_A 8
-#define		STEPPERS_MISC_OUT2_INVERT_END_X 16
-#define		STEPPERS_MISC_OUT2_INVERT_END_Y 32
-#define		STEPPERS_MISC_OUT2_INVERT_END_Z 64
-#define STEPPERS_MISC_OUT3 REG(0xD40F)
-
-#define STEPPERS_REG32(n) REG32(0xD480 + (n<<2))
-#define STEPPERS_REG(n, m) REG(0xD480 + (n<<2) + m)
+#include "rs485.h"
 
 uint8_t	buf_cmd[16];
 uint8_t	buf[512];
@@ -316,8 +191,8 @@ void __fastcall__ cputc(char c) {
 	if (c == '\n')
 		cputc('\r');
 
-	while (!(UART_STATUS & UART_STATUS_TBUFE)) {};
-	UART_DATA = c & 0xff;
+	while (!(UART0_STATUS & UART_STATUS_TRDY)) {};
+	UART0_DATA = c & 0xff;
 }
 
 void putnl() {
@@ -348,14 +223,14 @@ void putstr(const char *ptr) {
 }
 
 char getc() {
-        while ((UART_STATUS & UART_STATUS_DRDY) == 0) {};
-        return UART_DATA;
+        while ((UART0_STATUS & UART_STATUS_DRDY) == 0) {};
+        return UART0_DATA;
 }
 
 char getc_nowait(char *res) {
-        if ((UART_STATUS & UART_STATUS_DRDY) == 0)
+        if ((UART0_STATUS & UART_STATUS_DRDY) == 0)
                 return 0;
-        *res = UART_DATA;
+        *res = UART0_DATA;
         return 1;
 }
 
@@ -1342,6 +1217,8 @@ main(int argc, char **argv)
 		osram_write(osram_init[ch]);
 	};
 
+	rs485Init();
+
 	cmdlineInit();
 	cmdlineAddCommand("help", do_help);
 	cmdlineAddCommand("?", do_help);
@@ -1362,6 +1239,7 @@ main(int argc, char **argv)
 	cmdlineAddCommand("rd32", do_rd32);
 	cmdlineAddCommand("wr32", do_wr32);
 	cmdlineAddCommand("step", do_step);
+	cmdlineAddCommand("sendcmd", do_sendcmd);
 	cmdlineAddCommand("reset", (void *)0xE000);
 	cmdlinePrintPrompt();
 
@@ -1370,6 +1248,7 @@ main(int argc, char **argv)
 			cmdlineInputFunc(ch);
 		};
 		cmdlineMainLoop();
+		rs485MainLoop();
 	};
 
 	cprintf("\ndone\n");

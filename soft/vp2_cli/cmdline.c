@@ -228,7 +228,7 @@ void cmdlineInputFunc(unsigned char c)
 		CmdlineBufferLength = 0;
 		CmdlineBufferEditPos = 0;
 	}
-	else if(c == ASCII_BS)
+	else if(c == ASCII_DEL)
 	{
 		if(CmdlineBufferEditPos)
 		{
@@ -268,10 +268,10 @@ void cmdlineInputFunc(unsigned char c)
 			cmdlineOutputFunc(ASCII_BEL);
 		}
 	}
-	else if(c == ASCII_DEL)
+	/* else if(c == ASCII_DEL)
 	{
 		// not yet handled
-	}
+	} */
 	else if(c == ASCII_ESC)
 	{
 		CmdlineInputVT100State = 1;
