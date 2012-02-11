@@ -1,4 +1,5 @@
 void do_step(void);
+void do_build(void);
 void steppersInit(void);
 void steppersMainLoop(void);
 

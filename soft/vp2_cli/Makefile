@@ -3,7 +3,7 @@ all:	main.bin
 VER != date '+%Y/%m/%d %H:%M:%S'
 
 PROG = main
-OBJS = main.o cmdline.o rs485.o steppers.o sdcard.o
+OBJS = main.o cmdline.o rs485.o steppers.o sdcard.o util.o maxspi.o
 OBJS += strtol.o
 
 sd:	main.bin

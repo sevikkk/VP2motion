@@ -8,6 +8,9 @@
 #include "io_steppers.h"
 #include "steppers.h"
 #include "cmdline.h"
+#include "sdcard.h"
+#include "util.h"
+#include "rs485.h"
 
 #define STATE_IDLE 0
 #define STATE_MOVING_TO 1
@@ -15,7 +18,292 @@
 #define STATE_BRAKING 3
 #define STATE_IDLE_ON_STOP 4
 
-static int8_t state[4] = { STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_IDLE};
+static int8_t step_state[4] = { STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_IDLE};
+
+int buf_used;
+int buf_idx;
+int eof = 0;
+
+uint8_t pop8() {
+	if (eof) return 0;
+
+	if (buf_idx >= buf_used) {
+		buf_used = readfile();
+		buf_idx = 0;
+		if (buf_used <= 0) {
+			eof = 1;
+			return 0;
+		};
+	};
+	return buf[buf_idx++];
+};
+
+int16_t pop16() {
+	union {
+		int16_t a;
+		struct {
+			uint8_t data[2];
+		} b;
+	} shared;
+	shared.b.data[0] = pop8();
+	shared.b.data[1] = pop8();
+	return shared.a;
+};
+
+int32_t pop32() {
+	union {
+		int32_t a;
+		struct {
+			uint8_t data[4];
+		} b;
+	} shared;
+	shared.b.data[0] = pop8();
+	shared.b.data[1] = pop8();
+	shared.b.data[2] = pop8();
+	shared.b.data[3] = pop8();
+	return shared.a;
+}
+
+void
+parse_tool(void) {
+	uint8_t idx, cmd, len;
+	int16_t temp;
+
+	idx = pop8();
+	cmd = pop8();
+	len = pop8();
+	if (idx != 0) {
+		cprintf("Unknown tool idx: %d\n", idx);
+		eof = 1;
+		return;
+	};
+	switch (cmd) {
+		case 3: 
+			temp = pop16();
+			cprintf("Set temp to %d\n", temp);
+			break;
+		case 4: 
+			cmd = pop8();
+			cprintf("Set fan pwm to %d\n", cmd);
+			break;
+		case 27: 
+			cmd = pop8();
+			cprintf("Toggle ABP to %d\n", cmd);
+			break;
+		case 31: 
+			temp = pop16();
+			cprintf("Set platform temp to %d\n", temp);
+			break;
+		case 10: 
+			cmd = pop8();
+			cprintf("Set fan to %d\n", cmd);
+			break;
+		default:
+			cprintf("Unknown tool command: %d\n", cmd);
+			eof = 1;
+			break;
+	};
+
+};
+
+void
+do_build(void) {
+	int16_t rc;
+	char fname[20];
+	uint8_t cmd;
+	uint8_t prev_cmd=0;
+	int16_t feedrate;
+	int32_t time, x, y, z, a, b, cmd_n, cmd_time;
+	char *dir;
+#define BUILD_STATE_NONE 0
+#define BUILD_STATE_WAIT_TOOL 1
+#define BUILD_STATE_WAIT_STEP 2
+#define BUILD_STATE_DELAY 3
+	int8_t state = BUILD_STATE_NONE, wait;
+
+	rc = opendisk();
+	if (rc) return;
+
+	get_arg(1, fname);
+
+	rc = openfile(fname);
+	if (rc) return;
+	cmd_n = 0;
+	cmd_time = 0;
+
+	while (1) {
+		wait = 1;
+		while (wait) {
+			rs485MainLoop();
+			steppersMainLoop();
+			switch (state) {
+				case BUILD_STATE_NONE:
+					wait = 0;
+					break;
+				case BUILD_STATE_WAIT_TOOL:
+					wait = 0;
+					state = BUILD_STATE_NONE;
+					break;
+				case BUILD_STATE_WAIT_STEP:
+					wait = 0;
+					for (cmd = 0; cmd<4; cmd++) {
+						if ((step_state[cmd] == STATE_IDLE) || (step_state[cmd] == STATE_IDLE_ON_STOP))
+							continue;
+						wait = 1;
+					}
+					if (!wait)
+						state = BUILD_STATE_NONE;
+					break;
+				case BUILD_STATE_DELAY:
+					wait = 0;
+					state = BUILD_STATE_NONE;
+					break;
+			};
+		};
+		cmd = pop8();
+		if (eof)
+			break;
+
+		if ((prev_cmd == 142) && (cmd != 142)) {
+			cprintf("\n");
+		};
+		cprintf("[%07ld %ld] ", cmd_n, cmd_time/1000L);
+		cmd_n++;
+		prev_cmd = cmd;
+
+		switch (cmd) {
+			case 131:
+			case 132:
+				if (cmd == 131) {
+					dir = "min";
+				} else {
+					dir = "max";
+				};
+
+				cmd = pop8();
+				feedrate = pop16();
+				time = pop32();
+				cprintf("Home %s on axes: %d %d %d %d %d with feed: %d timeout: %ld\n", dir, cmd&1, cmd&2, cmd&4, cmd&8, cmd&16, feedrate, time);
+				if (cmd & 1) {
+					steppers_move_to(0, -200000l, 200000l * feedrate * 50, 1);
+					state = BUILD_STATE_WAIT_STEP;
+				};
+				if (cmd & 2) {
+					steppers_move_to(1, 200000l, 200000l * feedrate * 50, 1);
+					state = BUILD_STATE_WAIT_STEP;
+				};
+				if (cmd & 4) {
+					steppers_move_to(2, 200000l, 200000l * feedrate * 50, 1);
+					state = BUILD_STATE_WAIT_STEP;
+				};
+				break;
+			case 133:
+				time = pop32();
+				cprintf("Wait for %ld\n", time);
+				break;
+			case 134:
+				cmd = pop8();
+				cprintf("Switch to tool %d\n", cmd);
+				break;
+			case 135:
+			case 141:
+				if (cmd == 135) {
+					dir = "tool";
+				} else {
+					dir = "platform";
+				};
+				cmd = pop8();
+				feedrate = pop16();
+				time = pop16();
+				cprintf("Wait for %s %d for %ds\n", dir, cmd, time);
+				break;
+			case 136:
+				parse_tool();
+				break;
+			case 137:
+				cmd = pop8();
+				cprintf("%s axes: %d %d %d %d %d \n", (cmd&128)?"Enable":"Disable", cmd&1, cmd&2, cmd&4, cmd&8, cmd&16);
+				if (cmd & 128) {
+					STEPPERS_MISC_OUT1 |= STEPPERS_MISC_OUT1_ENABLE_XYZ | STEPPERS_MISC_OUT1_ENABLE_A;
+				} else {
+					STEPPERS_MISC_OUT1 &= ~(STEPPERS_MISC_OUT1_ENABLE_XYZ | STEPPERS_MISC_OUT1_ENABLE_A);
+				};
+				break;
+			case 139:
+				x = pop32();
+				y = pop32();
+				z = pop32();
+				a = pop32();
+				b = pop32();
+				time = pop32();
+				cprintf("Abs move to: %ld %ld %ld %ld %ld at dda %ld\n", x, y, z, a, b, time);
+				steppers_move_to(0, x, 200000L * 50 * time, 0);
+				steppers_move_to(1, y, 200000L * 50 * time, 0);
+				steppers_move_to(2, z, 200000L * 50 * time, 0);
+				steppers_move_to(3, a, 200000L * 50 * time, 0);
+				state = BUILD_STATE_WAIT_STEP;
+				break;
+			case 140:
+				x = pop32();
+				y = pop32();
+				z = pop32();
+				a = pop32();
+				b = pop32();
+				cprintf("Set position: %ld %ld %ld %ld %ld\n", x, y, z, a, b);
+				STEPPERS_OUT_SELECT1 = 0;
+				STEPPERS_REG32(0) = x;
+				STEPPERS_SET_GEN = STEPPERS_SET_X_SET_POS;
+				STEPPERS_REG32(0) = y;
+				STEPPERS_SET_GEN = STEPPERS_SET_Y_SET_POS;
+				STEPPERS_REG32(0) = z;
+				STEPPERS_SET_GEN = STEPPERS_SET_Z_SET_POS;
+				STEPPERS_REG32(0) = a;
+				STEPPERS_SET_GEN = STEPPERS_SET_A_SET_POS;
+				break;
+			case 142:
+				x = pop32();
+				y = pop32();
+				z = pop32();
+				a = pop32();
+				b = pop32();
+				time = pop32();
+				cmd = pop8();
+				cprintf("Move to (%ld, %ld, %ld, %ld, %ld) in %ld rel: %d                      \r", x, y, z, a, b, time, cmd);
+				steppers_move_to(0, x, time * 50, cmd & 1);
+				steppers_move_to(1, y, time * 50, cmd & 2);
+				steppers_move_to(2, z, time * 50, cmd & 4);
+				steppers_move_to(3, a, time * 50, cmd & 8);
+				state = BUILD_STATE_WAIT_STEP;
+				cmd_time += time/1000L;
+				break;
+			case 144:
+				cmd = pop8();
+				cprintf("Recall home on axes: %d %d %d %d %d\n", cmd&1, cmd&2, cmd&4, cmd&8, cmd&16);
+				STEPPERS_OUT_SELECT1 = 0;
+				if (cmd & 1) {
+					STEPPERS_REG32(0) = -180000L;
+					STEPPERS_SET_GEN = STEPPERS_SET_X_SET_POS;
+				};
+				if (cmd & 2) {
+					STEPPERS_REG32(0) = 105000L;
+					STEPPERS_SET_GEN = STEPPERS_SET_Y_SET_POS;
+				};
+				if (cmd & 4) {
+					STEPPERS_REG32(0) = 180000L;
+					STEPPERS_SET_GEN = STEPPERS_SET_Z_SET_POS;
+				};
+				if (cmd & 8) {
+					STEPPERS_REG32(0) = a;
+					STEPPERS_SET_GEN = STEPPERS_SET_A_SET_POS;
+				};
+				break;
+			default:
+				cprintf("Unknown command: %d\n", cmd);
+				eof = 1;
+				break;
+		};
+	};
+}
 
 void
 do_step(void) {
@@ -136,10 +424,10 @@ do_step(void) {
 			a = STEPPERS_MISC_IN1;
 			STEPPERS_SET_GEN = STEPPERS_SET_DEBOUNCE_UNLOCK;
 			cprintf("    pos     vel    end\n");
-			cprintf("x: %8ld %10ld %8ld %3d %d\n", STEPPERS_REG32(2), STEPPERS_REG32(3), STEPPERS_REG32(4), STEPPERS_REG(13, 0), state[0]);
-			cprintf("y: %8ld %10ld %8ld %3d %d\n", STEPPERS_REG32(5), STEPPERS_REG32(6), STEPPERS_REG32(7), STEPPERS_REG(13, 1), state[1]);
-			cprintf("z: %8ld %10ld %8ld %3d %d\n", STEPPERS_REG32(8), STEPPERS_REG32(9), STEPPERS_REG32(10), STEPPERS_REG(13, 2), state[2]);
-			cprintf("a: %8ld %10ld          %d\n", STEPPERS_REG32(11), STEPPERS_REG32(12), state[3]);
+			cprintf("x: %8ld %10ld %8ld %3d %d\n", STEPPERS_REG32(2), STEPPERS_REG32(3), STEPPERS_REG32(4), STEPPERS_REG(13, 0), step_state[0]);
+			cprintf("y: %8ld %10ld %8ld %3d %d\n", STEPPERS_REG32(5), STEPPERS_REG32(6), STEPPERS_REG32(7), STEPPERS_REG(13, 1), step_state[1]);
+			cprintf("z: %8ld %10ld %8ld %3d %d\n", STEPPERS_REG32(8), STEPPERS_REG32(9), STEPPERS_REG32(10), STEPPERS_REG(13, 2), step_state[2]);
+			cprintf("a: %8ld %10ld          %d\n", STEPPERS_REG32(11), STEPPERS_REG32(12), step_state[3]);
 			cprintf("endstops: %02x\n", a);
 		};
 	};
@@ -201,7 +489,7 @@ static int32_t max_speed[4] = { 20 * 3200, 20*3200, 5*3200, 5*3200 };
 void steppers_brake(uint8_t axis) {
 	cprintf("axis %d: braking\n", axis);
 	steppers_move_to(axis, 0L, 5000000L, 1);
-	state[axis] = STATE_BRAKING;
+	step_state[axis] = STATE_BRAKING;
 };
 
 int8_t steppers_move_to(uint8_t axis, int32_t target_position, uint32_t target_time, uint8_t relative) {
@@ -233,9 +521,9 @@ int8_t steppers_move_to(uint8_t axis, int32_t target_position, uint32_t target_t
 		steppers_brake(axis);
 		return 0;
 	} else if (to_end){
-		state[axis] = STATE_MOVING_TO;
+		step_state[axis] = STATE_MOVING_TO;
 	} else {
-		state[axis] = STATE_MOVING_AWAY;
+		step_state[axis] = STATE_MOVING_AWAY;
 	};
 
 	if (relative) {
@@ -262,16 +550,16 @@ void steppersMainLoop(void) {
 	ends = STEPPERS_MISC_IN1;
 	STEPPERS_SET_GEN = STEPPERS_SET_DEBOUNCE_UNLOCK;
 	for (axis = 0; axis < 4; axis++) {
-		if ((state[axis] == STATE_MOVING_TO || state[axis] == STATE_MOVING_AWAY || state[axis] == STATE_BRAKING) && (done & done_mask[axis])) {
+		if ((step_state[axis] == STATE_MOVING_TO || step_state[axis] == STATE_MOVING_AWAY || step_state[axis] == STATE_BRAKING) && (done & done_mask[axis])) {
 			cprintf("axis %d: movement done\n", axis);
 			if (ends & ends_mask[axis]) {
-				state[axis] = STATE_IDLE_ON_STOP;
+				step_state[axis] = STATE_IDLE_ON_STOP;
 			} else {
-				state[axis] = STATE_IDLE;
+				step_state[axis] = STATE_IDLE;
 			};
 		};
-		if (state[axis] == STATE_MOVING_TO && (ends & ends_mask[axis])) {
-			state[axis] = STATE_BRAKING;
+		if (step_state[axis] == STATE_MOVING_TO && (ends & ends_mask[axis])) {
+			step_state[axis] = STATE_BRAKING;
 			cprintf("axis %d: hit endstop, braking\n", axis);
 			steppers_brake(axis);
 		};
