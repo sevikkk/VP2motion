@@ -194,7 +194,9 @@ static int8_t done_mask[4] = {
 #define END_NONE 2
 static int8_t ends_dir[4] = { END_MIN, END_MAX, END_MAX, END_NONE };
 
+#if 0
 static int32_t max_speed[4] = { 20 * 3200, 20*3200, 5*3200, 5*3200 };
+#endif
 
 void steppers_brake(uint8_t axis) {
 	cprintf("axis %d: braking\n", axis);
@@ -205,7 +207,6 @@ void steppers_brake(uint8_t axis) {
 int8_t steppers_move_to(uint8_t axis, int32_t target_position, uint32_t target_time, uint8_t relative) {
 	int8_t set_offset = axis * (STEPPERS_SET_Y_START - STEPPERS_SET_X_START );
 	int8_t in_offset = axis * (STEPPERS_IN_Y_CUR_POS - STEPPERS_IN_X_CUR_POS );
-	int8_t next_state;
 	int8_t ends, to_end, brake = 0;
 	int32_t cur_position;
 
