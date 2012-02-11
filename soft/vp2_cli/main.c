@@ -13,6 +13,7 @@
 #include "io_steppers.h"
 
 #include "rs485.h"
+#include "steppers.h"
 
 uint8_t	buf_cmd[16];
 uint8_t	buf[512];
@@ -1050,136 +1051,6 @@ do_readrom(void) {
 	};
 }
 
-
-void
-do_step(void) {
-	char *subcommand;
-	int8_t i, a;
-	int32_t time;
-	int32_t delta;
-
-	/*
-	cprintf("100: %x\n", REG(0x100));
-	cprintf("180: %x\n", REG(0x180));
-	cprintf("200: %x\n", REG(0x200));
-	cprintf("280: %x\n", REG(0x280));
-	cprintf("300: %x\n", REG(0x300));
-	cprintf("380: %x\n", REG(0x380));
-	cprintf("700: %x\n", REG(0x700));
-	cprintf("780: %x\n", REG(0x780));
-	cprintf("D00: %x\n", REG(0xD00));
-	cprintf("D80: %x\n", REG(0xD80));
-	*/
-
-	i = 1;
-	while (1) {
-		subcommand = cmdlineGetArgStr(i);
-		i++;
-
-		if (subcommand[0] == '\0')
-			break;
-
-		if (strncmp("enable", subcommand, 6) == 0) {
-			cprintf("enable motors\n");
-			STEPPERS_MISC_OUT1 |= STEPPERS_MISC_OUT1_ENABLE_XYZ | STEPPERS_MISC_OUT1_ENABLE_A;
-		} else if (strncmp("disable", subcommand, 7) == 0){
-			STEPPERS_MISC_OUT1 &= ~(STEPPERS_MISC_OUT1_ENABLE_XYZ | STEPPERS_MISC_OUT1_ENABLE_A);
-			cprintf("disable motors\n");
-		} else if (strncmp("time", subcommand, 4) == 0){
-			time = cmdlineGetArgInt(i);
-			time = time * 50000l;
-			i++;
-			cprintf("target time: %ld\n", time);
-			STEPPERS_REG32(0) = time;
-		} else if (strncmp("x", subcommand, 1) == 0){
-			delta = cmdlineGetArgInt(i);
-			i++;
-			cprintf("x to %ld in %ld\n", delta, STEPPERS_REG32(0));
-			STEPPERS_REG32(1) = delta;
-			STEPPERS_OUT_SELECT1 = 0;
-			STEPPERS_SET_GEN = STEPPERS_SET_X_SET_TARGET_TIME;
-			STEPPERS_OUT_SELECT1 = 1;
-			STEPPERS_SET_GEN = STEPPERS_SET_X_SET_TARGET_POS;
-			STEPPERS_SET_GEN = STEPPERS_SET_X_START;
-		} else if (strncmp("y", subcommand, 1) == 0){
-			delta = cmdlineGetArgInt(i);
-			i++;
-			cprintf("y to %ld in %ld\n", delta, STEPPERS_REG32(0));
-			STEPPERS_REG32(1) = delta;
-			STEPPERS_OUT_SELECT1 = 0;
-			STEPPERS_SET_GEN = STEPPERS_SET_Y_SET_TARGET_TIME;
-			STEPPERS_OUT_SELECT1 = 1;
-			STEPPERS_SET_GEN = STEPPERS_SET_Y_SET_TARGET_POS;
-			STEPPERS_SET_GEN = STEPPERS_SET_Y_START;
-		} else if (strncmp("z", subcommand, 1) == 0){
-			delta = cmdlineGetArgInt(i);
-			i++;
-			cprintf("z to %ld in %ld\n", delta, STEPPERS_REG32(0));
-			STEPPERS_REG32(1) = delta;
-			STEPPERS_OUT_SELECT1 = 0;
-			STEPPERS_SET_GEN = STEPPERS_SET_Z_SET_TARGET_TIME;
-			STEPPERS_OUT_SELECT1 = 1;
-			STEPPERS_SET_GEN = STEPPERS_SET_Z_SET_TARGET_POS;
-			STEPPERS_SET_GEN = STEPPERS_SET_Z_START;
-		} else if (strncmp("a", subcommand, 1) == 0){
-			delta = cmdlineGetArgInt(i);
-			i++;
-			cprintf("a to %ld in %ld\n", delta, STEPPERS_REG32(0));
-			STEPPERS_REG32(1) = delta;
-			STEPPERS_OUT_SELECT1 = 0;
-			STEPPERS_SET_GEN = STEPPERS_SET_A_SET_TARGET_TIME;
-			STEPPERS_OUT_SELECT1 = 1;
-			STEPPERS_SET_GEN = STEPPERS_SET_A_SET_TARGET_POS;
-			STEPPERS_SET_GEN = STEPPERS_SET_A_START;
-		} else if (strncmp("home", subcommand, 4) == 0){
-			cprintf("set to 0\n");
-			STEPPERS_REG32(1) = 0;
-			STEPPERS_OUT_SELECT1 = 1;
-			STEPPERS_SET_GEN = STEPPERS_SET_X_SET_POS;
-			STEPPERS_SET_GEN = STEPPERS_SET_Y_SET_POS;
-			STEPPERS_SET_GEN = STEPPERS_SET_Z_SET_POS;
-			STEPPERS_SET_GEN = STEPPERS_SET_A_SET_POS;
-		} else if (strncmp("status", subcommand, 6) == 0){
-			STEPPERS_IN_SELECT = STEPPERS_IN_X_CUR_POS;
-			STEPPERS_CAPTURE = 2;
-			STEPPERS_IN_SELECT = STEPPERS_IN_X_CUR_VEL;
-			STEPPERS_CAPTURE = 3;
-			STEPPERS_IN_SELECT = STEPPERS_IN_Y_CUR_POS;
-			STEPPERS_CAPTURE = 4;
-			STEPPERS_IN_SELECT = STEPPERS_IN_Y_CUR_VEL;
-			STEPPERS_CAPTURE = 5;
-			STEPPERS_IN_SELECT = STEPPERS_IN_Z_CUR_POS;
-			STEPPERS_CAPTURE = 6;
-			STEPPERS_IN_SELECT = STEPPERS_IN_Z_CUR_VEL;
-			STEPPERS_CAPTURE = 7;
-			STEPPERS_IN_SELECT = STEPPERS_IN_A_CUR_POS;
-			STEPPERS_CAPTURE = 8;
-			STEPPERS_IN_SELECT = STEPPERS_IN_A_CUR_VEL;
-			STEPPERS_CAPTURE = 9;
-			a = STEPPERS_MISC_IN1;
-			STEPPERS_SET_GEN = STEPPERS_SET_DEBOUNCE_UNLOCK;
-			cprintf("    pos     vel\n");
-			cprintf("x: %8ld %10ld\n", STEPPERS_REG32(2), STEPPERS_REG32(3));
-			cprintf("y: %8ld %10ld\n", STEPPERS_REG32(4), STEPPERS_REG32(5));
-			cprintf("z: %8ld %10ld\n", STEPPERS_REG32(6), STEPPERS_REG32(7));
-			cprintf("a: %8ld %10ld\n", STEPPERS_REG32(8), STEPPERS_REG32(9));
-			cprintf("endstops: %02x\n", a);
-		};
-	};
-	/*
-	cprintf("100: %x\n", REG(0x100));
-	cprintf("180: %x\n", REG(0x180));
-	cprintf("200: %x\n", REG(0x200));
-	cprintf("280: %x\n", REG(0x280));
-	cprintf("300: %x\n", REG(0x300));
-	cprintf("380: %x\n", REG(0x380));
-	cprintf("700: %x\n", REG(0x700));
-	cprintf("780: %x\n", REG(0x780));
-	cprintf("D00: %x\n", REG(0xD00));
-	cprintf("D80: %x\n", REG(0xD80));
-	*/
-}
-
 void
 do_osram(void) {
 	int16_t rc;
@@ -1205,19 +1076,12 @@ main(int argc, char **argv)
 	cprintf(MAIN_VERSION);
 	cprintf("\n");
 
-	STEPPERS_MISC_OUT2 = 
-		STEPPERS_MISC_OUT2_INVERT_DIR_Y | 
-		STEPPERS_MISC_OUT2_INVERT_DIR_Z | 
-		STEPPERS_MISC_OUT2_INVERT_END_X | 
-		STEPPERS_MISC_OUT2_INVERT_END_Y | 
-		STEPPERS_MISC_OUT2_INVERT_END_Z;
-	STEPPERS_SET_GEN = STEPPERS_SET_DEBOUNCE_UNLOCK;
-
 	for (ch = 0; ch < 26; ch++) {
 		osram_write(osram_init[ch]);
 	};
 
 	rs485Init();
+	steppersInit();
 
 	cmdlineInit();
 	cmdlineAddCommand("help", do_help);
@@ -1249,6 +1113,7 @@ main(int argc, char **argv)
 		};
 		cmdlineMainLoop();
 		rs485MainLoop();
+		steppersMainLoop();
 	};
 
 	cprintf("\ndone\n");

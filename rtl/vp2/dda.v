@@ -106,7 +106,7 @@ always @(reset or target_position or target_time or start or position or quotine
 								begin
 									if (start || restart || recalc) 
 										begin
-											if (relative && start)
+											if (relative && (start || restart))
 												begin
 													next_orig_target <= position + target_position;
 													next_divisor <= target_time;
@@ -123,7 +123,7 @@ always @(reset or target_position or target_time or start or position or quotine
 															next_divident <= -target_position;
 														end
 												end
-											else if (start)
+											else if (start || restart)
 												begin
 													next_orig_target <= target_position;
 													next_divisor <= target_time;
