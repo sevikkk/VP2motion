@@ -61,6 +61,8 @@ architecture Behaviour of RxUnit is
   -----------------------------------------------------------------------------
   signal Start     : Std_Logic;             -- Syncro signal
   signal tmpRxD    : Std_Logic;             -- RxD buffer
+  signal RxD_s  : Std_Logic;             -- RxD buffer
+  signal RxD_s2 : Std_Logic;             -- RxD buffer
   signal tmpDRdy   : Std_Logic;             -- Data ready buffer
   signal outErr    : Std_Logic;             -- 
   signal frameErr  : Std_Logic;             -- 
@@ -87,6 +89,8 @@ begin
            tmpDRdy <= '0';
            frameErr <= '0';
            outErr <= '0';
+			  RxD_s <= '0';
+			  RxD_s2 <= '0';
 
            ShtReg <= "00000000";  --
            DOut   <= "00000000";  --
@@ -94,6 +98,9 @@ begin
            if RD = '1' then
               tmpDRdy <= '0';      -- Data was read
            end if;
+
+			  RxD_s <= RxD;
+			  RxD_s2 <= RxD_s;
 
            if Enable = '1' then
               if Start = '0' then
@@ -103,7 +110,7 @@ begin
                  end if;
               else
                  if tmpSampleCnt = 8 then  -- reads the RxD line
-                    tmpRxD <= RxD;
+                    tmpRxD <= RxD_s2;
                     SampleCnt <= SampleCnt + CntOne;                
                  elsif tmpSampleCnt = 15 then
                     case tmpBitCnt is

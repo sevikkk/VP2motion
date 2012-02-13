@@ -268,12 +268,12 @@ do_build(void) {
 				b = pop32();
 				time = pop32();
 				cmd = pop8();
-				cprintf("Move to (%ld, %ld, %ld, %ld, %ld) in %ld rel: %d                      \r", x, y, z, a, b, time, cmd);
 				steppers_move_to(0, x, time * 50, cmd & 1);
 				steppers_move_to(1, y, time * 50, cmd & 2);
 				steppers_move_to(2, z, time * 50, cmd & 4);
 				steppers_move_to(3, a, time * 50, cmd & 8);
 				state = BUILD_STATE_WAIT_STEP;
+				cprintf("Move to (%ld, %ld, %ld, %ld, %ld) in %ld rel: %d   \r", x, y, z, a, b, time, cmd);
 				cmd_time += time/1000L;
 				break;
 			case 144:
@@ -449,6 +449,7 @@ void steppersInit(void) {
 	STEPPERS_MISC_OUT2 = 
 		STEPPERS_MISC_OUT2_INVERT_DIR_Y | 
 		STEPPERS_MISC_OUT2_INVERT_DIR_Z | 
+		STEPPERS_MISC_OUT2_INVERT_DIR_A | 
 		STEPPERS_MISC_OUT2_INVERT_END_X | 
 		STEPPERS_MISC_OUT2_INVERT_END_Y | 
 		STEPPERS_MISC_OUT2_INVERT_END_Z;
@@ -498,7 +499,7 @@ int8_t steppers_move_to(uint8_t axis, int32_t target_position, uint32_t target_t
 	int8_t ends, to_end, brake = 0;
 	int32_t cur_position;
 
-	cprintf("axis %d: move to %ld in %ld rel: %d\n", axis, target_position, target_time, relative);
+	/* cprintf("axis %d: move to %ld in %ld rel: %d\n", axis, target_position, target_time, relative); */
 	ends = STEPPERS_MISC_IN1 & ends_mask[axis];
 
 	if (relative) {
@@ -532,7 +533,7 @@ int8_t steppers_move_to(uint8_t axis, int32_t target_position, uint32_t target_t
 		STEPPERS_MISC_OUT0 &= ~rel_mask[axis];
 	};
 
-	cprintf("axis %d: step cmd: pos: %ld in %ld rel: %d\n", axis, target_position, target_time, relative);
+	/* cprintf("axis %d: step cmd: pos: %ld in %ld rel: %d\n", axis, target_position, target_time, relative); */
 	STEPPERS_REG32(0) = target_time;
 	STEPPERS_OUT_SELECT1 = 0;
 	STEPPERS_SET_GEN = STEPPERS_SET_X_SET_TARGET_TIME + set_offset;
@@ -551,7 +552,7 @@ void steppersMainLoop(void) {
 	STEPPERS_SET_GEN = STEPPERS_SET_DEBOUNCE_UNLOCK;
 	for (axis = 0; axis < 4; axis++) {
 		if ((step_state[axis] == STATE_MOVING_TO || step_state[axis] == STATE_MOVING_AWAY || step_state[axis] == STATE_BRAKING) && (done & done_mask[axis])) {
-			cprintf("axis %d: movement done\n", axis);
+			/* cprintf("axis %d: movement done\n", axis); */
 			if (ends & ends_mask[axis]) {
 				step_state[axis] = STATE_IDLE_ON_STOP;
 			} else {

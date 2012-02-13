@@ -40,14 +40,19 @@ reg signed [31:0] next_position;
 reg signed [31:0] cur_velocity;
 reg signed [31:0] next_cur_velocity;
 
+reg signed [31:0] target_velocity;
+reg signed [31:0] next_target_velocity;
+
 reg [9:0] cycle;
 reg [9:0] next_cycle;
 
 wire [31:0] max_accel;
+wire [31:0] max_velocity;
 
 assign max_accel = 200;
+assign max_velocity = 2100000;
 
-always @(reset or cur_velocity or cycle or set_position)
+always @(reset or cur_velocity or cycle or set_position or target_velocity)
 	begin
 		if (reset)
 			begin
@@ -66,22 +71,22 @@ always @(reset or cur_velocity or cycle or set_position)
 				if (cycle == 999)
 					begin
 						next_cycle <= 0;
-						if (cur_velocity > velocity)
+						if (cur_velocity > target_velocity)
 							begin
-								if (cur_velocity - velocity < max_accel)
+								if (cur_velocity - target_velocity < max_accel)
 									begin
-										next_cur_velocity <= velocity;
+										next_cur_velocity <= target_velocity;
 									end
 								else
 									begin
 										next_cur_velocity <= cur_velocity - max_accel;
 									end
 							end
-						else if (cur_velocity < velocity)
+						else if (cur_velocity < target_velocity)
 							begin
-								if (velocity - cur_velocity < max_accel)
+								if (target_velocity - cur_velocity < max_accel)
 									begin
-										next_cur_velocity <= velocity;
+										next_cur_velocity <= target_velocity;
 									end
 								else
 									begin
@@ -92,11 +97,30 @@ always @(reset or cur_velocity or cycle or set_position)
 					end
 			end
 	end
+	
+always @(velocity or max_velocity)
+	begin
+		if (velocity > 0)
+			begin
+				if (velocity > max_velocity)
+					next_target_velocity <= max_velocity;
+				else
+					next_target_velocity <= velocity;
+			end
+		else
+			begin
+				if (-velocity > max_velocity)
+					next_target_velocity <= -max_velocity;
+				else
+					next_target_velocity <= velocity;
+			end
+	end
 
 always @(posedge clk)
 	begin
 		cycle <= next_cycle;
 		cur_velocity <= next_cur_velocity;
+		target_velocity <= next_target_velocity;
 	end
 
 
