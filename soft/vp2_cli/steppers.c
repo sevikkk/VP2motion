@@ -6,6 +6,7 @@
 
 #include "io.h"
 #include "io_steppers.h"
+#include "io_uart.h"
 #include "steppers.h"
 #include "cmdline.h"
 #include "sdcard.h"
@@ -64,6 +65,17 @@ int32_t pop32() {
 	return shared.a;
 }
 
+#define BUILD_STATE_NONE 0
+#define BUILD_STATE_WAIT_STEP 1
+#define BUILD_STATE_WAIT_TOOL_REPLY 2
+#define BUILD_STATE_WAIT_TOOL_READY 3
+#define BUILD_STATE_WAIT_TOOL_RETRY 4
+#define BUILD_STATE_DELAY 5
+
+static int8_t state = BUILD_STATE_NONE;
+static int16_t delay = 0;
+uint8_t cmd_buf[16];
+
 void
 parse_tool(void) {
 	uint8_t idx, cmd, len;
@@ -81,6 +93,12 @@ parse_tool(void) {
 		case 3: 
 			temp = pop16();
 			cprintf("Set temp to %d\n", temp);
+			cmd_buf[0] = 0;
+			cmd_buf[1] = 3;
+			cmd_buf[2] = temp & 0xff;
+			cmd_buf[3] = (temp >>8) & 0xff;
+			rs485_sendcmd(cmd_buf, 4);
+			state = BUILD_STATE_WAIT_TOOL_REPLY;
 			break;
 		case 4: 
 			cmd = pop8();
@@ -93,39 +111,71 @@ parse_tool(void) {
 		case 31: 
 			temp = pop16();
 			cprintf("Set platform temp to %d\n", temp);
+			cmd_buf[0] = 0;
+			cmd_buf[1] = 31;
+			cmd_buf[2] = temp & 0xff;
+			cmd_buf[3] = (temp >>8) & 0xff;
+			rs485_sendcmd(cmd_buf, 4);
+			state = BUILD_STATE_WAIT_TOOL_REPLY;
 			break;
 		case 10: 
 			cmd = pop8();
 			cprintf("Set fan to %d\n", cmd);
+			cmd_buf[0] = 0;
+			cmd_buf[1] = 12;
+			cmd_buf[2] = cmd & 1;
+			rs485_sendcmd(cmd_buf, 3);
+			state = BUILD_STATE_WAIT_TOOL_REPLY;
 			break;
 		default:
 			cprintf("Unknown tool command: %d\n", cmd);
 			eof = 1;
 			break;
 	};
-
 };
 
 void
 do_build(void) {
 	int16_t rc;
 	char fname[20];
-	uint8_t cmd;
-	uint8_t prev_cmd=0;
+	uint8_t cmd, tool_or_platform = 0;
+	uint8_t prev_cmd=0, wait, ch;
 	int16_t feedrate;
 	int32_t time, x, y, z, a, b, cmd_n, cmd_time;
 	char *dir;
-#define BUILD_STATE_NONE 0
-#define BUILD_STATE_WAIT_TOOL 1
-#define BUILD_STATE_WAIT_STEP 2
-#define BUILD_STATE_DELAY 3
-	int8_t state = BUILD_STATE_NONE, wait;
+	int8_t abort_state = 0;
+	int32_t speed, extr;
+
+	state = BUILD_STATE_NONE;
+	buf_used = 0;
+	buf_idx = 0;
+	eof = 0;
 
 	rc = opendisk();
 	if (rc) return;
 
 	get_arg(1, fname);
 
+	speed = cmdlineGetArgInt(2);
+	if (speed <= 0) {
+		speed = 50;
+	} else {
+		speed = 50 * 100 / speed;
+		if (speed < 5) {
+			speed = 5;
+		};
+		if (speed > 500 ) {
+			speed = 500;
+		};
+		cprintf("speed: %ld\n", speed);
+	};
+
+	extr = cmdlineGetArgInt(3);
+	if (extr <= 0) {
+		extr = 1000;
+	} else {
+		cprintf("extruder: %ld\n", extr);
+	};
 	rc = openfile(fname);
 	if (rc) return;
 	cmd_n = 0;
@@ -134,15 +184,85 @@ do_build(void) {
 	while (1) {
 		wait = 1;
 		while (wait) {
+			if (getc_nowait(&ch)) {
+				switch (abort_state) {
+					case 0:
+						if (ch == 'a') {
+							abort_state++;
+						} else {
+							abort_state = 0;
+						};
+						break;
+					case 1:
+						if (ch == 'b') {
+							abort_state++;
+						} else {
+							abort_state = 0;
+						};
+						break;
+					case 2:
+						if (ch == 'o') {
+							abort_state++;
+						} else {
+							abort_state = 0;
+						};
+						break;
+					case 3:
+						if (ch == 'r') {
+							abort_state++;
+						} else {
+							abort_state = 0;
+						};
+						break;
+					case 4:
+						if (ch == 't') {
+							cprintf("manual abort\n");
+							return;
+						} else {
+							abort_state = 0;
+						};
+						break;
+				};
+			};
+
 			rs485MainLoop();
 			steppersMainLoop();
 			switch (state) {
 				case BUILD_STATE_NONE:
 					wait = 0;
 					break;
-				case BUILD_STATE_WAIT_TOOL:
-					wait = 0;
-					state = BUILD_STATE_NONE;
+				case BUILD_STATE_WAIT_TOOL_REPLY:
+					if (rs485_state == RS485_STATE_IDLE) {
+						if ((rs485_cmd_len == 0) && (rs485_buf_used > 0) && (rs485_buf[0] == 0x81)) {
+							wait = 0;
+							state = BUILD_STATE_NONE;
+						} else {
+							cprintf("tool command error, aborting\n");
+							return;
+						};
+					};
+					break;
+				case BUILD_STATE_WAIT_TOOL_READY:
+					if (rs485_state == RS485_STATE_IDLE) {
+						if ((rs485_cmd_len == 0) && (rs485_buf_used > 0) && (rs485_buf[0] == 0x81)) {
+							if (rs485_buf[1] == 1) {
+								wait = 0;
+								state = BUILD_STATE_NONE;
+							} else {
+								state = BUILD_STATE_WAIT_TOOL_RETRY;
+								delay = CLOCK_MS;
+							};
+						} else {
+							cprintf("tool command error, aborting\n");
+							return;
+						};
+					};
+					break;
+				case BUILD_STATE_WAIT_TOOL_RETRY:
+					if ((int16_t)(CLOCK_MS - delay) > 1000) {
+						rs485_sendcmd(cmd_buf, 2);
+						state = BUILD_STATE_WAIT_TOOL_READY;
+					};
 					break;
 				case BUILD_STATE_WAIT_STEP:
 					wait = 0;
@@ -167,6 +287,7 @@ do_build(void) {
 		if ((prev_cmd == 142) && (cmd != 142)) {
 			cprintf("\n");
 		};
+
 		cprintf("[%07ld %ld] ", cmd_n, cmd_time/1000L);
 		cmd_n++;
 		prev_cmd = cmd;
@@ -185,15 +306,15 @@ do_build(void) {
 				time = pop32();
 				cprintf("Home %s on axes: %d %d %d %d %d with feed: %d timeout: %ld\n", dir, cmd&1, cmd&2, cmd&4, cmd&8, cmd&16, feedrate, time);
 				if (cmd & 1) {
-					steppers_move_to(0, -200000l, 200000l * feedrate * 50, 1);
+					steppers_move_to(0, -400000l, 200000l * feedrate * 50, 1);
 					state = BUILD_STATE_WAIT_STEP;
 				};
 				if (cmd & 2) {
-					steppers_move_to(1, 200000l, 200000l * feedrate * 50, 1);
+					steppers_move_to(1, 250000l, 200000l * feedrate * 50, 1);
 					state = BUILD_STATE_WAIT_STEP;
 				};
 				if (cmd & 4) {
-					steppers_move_to(2, 200000l, 200000l * feedrate * 50, 1);
+					steppers_move_to(2, 250000l, 200000l * feedrate * 50, 1);
 					state = BUILD_STATE_WAIT_STEP;
 				};
 				break;
@@ -207,11 +328,17 @@ do_build(void) {
 				break;
 			case 135:
 			case 141:
+				cmd_buf[0] = 0;
 				if (cmd == 135) {
 					dir = "tool";
+					cmd_buf[1] = 22;
 				} else {
 					dir = "platform";
+					cmd_buf[1] = 35;
 				};
+				rs485_sendcmd(cmd_buf, 2);
+				state = BUILD_STATE_WAIT_TOOL_READY;
+
 				cmd = pop8();
 				feedrate = pop16();
 				time = pop16();
@@ -268,10 +395,10 @@ do_build(void) {
 				b = pop32();
 				time = pop32();
 				cmd = pop8();
-				steppers_move_to(0, x, time * 50, cmd & 1);
-				steppers_move_to(1, y, time * 50, cmd & 2);
-				steppers_move_to(2, z, time * 50, cmd & 4);
-				steppers_move_to(3, a, time * 50, cmd & 8);
+				steppers_move_to(0, x, time * speed, cmd & 1);
+				steppers_move_to(1, y, time * speed, cmd & 2);
+				steppers_move_to(2, z, time * speed, cmd & 4);
+				steppers_move_to(3, a * extr/1000, time * speed, cmd & 8);
 				state = BUILD_STATE_WAIT_STEP;
 				cprintf("Move to (%ld, %ld, %ld, %ld, %ld) in %ld rel: %d   \r", x, y, z, a, b, time, cmd);
 				cmd_time += time/1000L;
@@ -289,7 +416,7 @@ do_build(void) {
 					STEPPERS_SET_GEN = STEPPERS_SET_Y_SET_POS;
 				};
 				if (cmd & 4) {
-					STEPPERS_REG32(0) = 180000L;
+					STEPPERS_REG32(0) = 183800L;
 					STEPPERS_SET_GEN = STEPPERS_SET_Z_SET_POS;
 				};
 				if (cmd & 8) {

@@ -3,6 +3,7 @@
 #include "cmdline.h"
 #include "io.h"
 #include "io_uart.h"
+#include "rs485.h"
 
 static uint8_t crc;
 static uint8_t crc_table[] =                // dallas crc lookup table
@@ -54,15 +55,16 @@ rs485Init(void) {
 	UART1_DIVIDER = 0x51;
 }
 
-static uint8_t cmd[16];
-static int8_t cmd_ptr = 0;
+#define RS485_BUF_SIZE 32
+uint8_t rs485_buf[RS485_BUF_SIZE];
+int8_t rs485_buf_used = 0;
 
-#define IDLE 0
-#define HDR 1
-#define DATA 2
-#define CRC 3
+uint8_t *rs485_cmd;
+int8_t rs485_cmd_len = 0;
+int8_t rs485_cmd_retries = 0;
 
-static int8_t state = IDLE;
+int8_t rs485_state = RS485_STATE_IDLE;
+int16_t timeout = 0;
 
 int8_t rc;
 uint8_t ch;
@@ -70,55 +72,106 @@ uint8_t bytes;
 
 void
 rs485MainLoop(void) {
+	uint8_t i;
 	rc = rs485_getc(&ch);
-	if (!rc)
-		return;
+	if (!rc) {
+		switch (rs485_state) {
+			case RS485_STATE_IDLE:
+			case RS485_STATE_RETRY:
+				if (rs485_cmd_len > 0) {
+					if (--rs485_cmd_retries <= 0) {
+						cprintf("rs485 send failed, no retries left");
+						rs485_cmd_len = -1;
+						rs485_state = RS485_STATE_IDLE;
+						return;
+					};
+					cprintf("rs485 send cmd:");
+					rs485_putc(0xd5);
+					rs485_putc(rs485_cmd_len);
+					crc = 0;
+					for (i=0; i < rs485_cmd_len; i++) {
+						rs485_putc(rs485_cmd[i]);
+						update_crc(rs485_cmd[i]);
+						cprintf(" %02x", rs485_cmd[i]);
+					};
 
-	switch (state) {
-		case IDLE:
+					cprintf("\n");
+					rs485_putc(crc);
+					rs485_state = RS485_STATE_WAIT;
+					timeout = CLOCK_MS;
+					return;
+				};
+				break;
+			default:
+				if (timeout > 0) {
+					if ((int16_t)(CLOCK_MS - timeout) > 1000) {
+						cprintf("rs485 timeout: %d %d %d\n", CLOCK_MS, timeout, (int16_t)(CLOCK_MS - timeout));
+						if (rs485_cmd_len > 0) {
+							rs485_state = RS485_STATE_RETRY;
+						} else {
+							rs485_state = RS485_STATE_IDLE;
+						};
+						timeout = 0;
+						return;
+					};
+				};
+		};
+		return;
+	};
+
+	switch (rs485_state) {
+		case RS485_STATE_IDLE:
+		case RS485_STATE_WAIT:
+		case RS485_STATE_RETRY:
 			if (ch == 0xD5) {
-				state = HDR;
+				rs485_state = RS485_STATE_HDR;
+				timeout = CLOCK_MS;
 			} else {
 				cprintf("noise char: %x\n", ch);
 			};
 			break;
-		case HDR:
+		case RS485_STATE_HDR:
 			bytes = ch;
-			if (bytes < 16) {
-				cmd_ptr = 0;
-				state = DATA;
+			if (bytes < RS485_BUF_SIZE) {
+				rs485_buf_used = 0;
+				rs485_state = RS485_STATE_DATA;
 				crc = 0;
 			} else {
 				cprintf("len too big: %d\n", ch);
-				state = IDLE;
+				rs485_state = RS485_STATE_IDLE;
 			};
 			break;
-		case DATA:
-			cmd[cmd_ptr] = ch;
-			cmd_ptr++;
+		case RS485_STATE_DATA:
+			rs485_buf[rs485_buf_used] = ch;
+			rs485_buf_used++;
 			update_crc(ch);
-			if (cmd_ptr == bytes) {
-				state = CRC;
+			if (rs485_buf_used == bytes) {
+				rs485_state = RS485_STATE_CRC;
 			};
 			break;
-		case CRC:
+		case RS485_STATE_CRC:
 			if (crc != ch) {
 				cprintf("crc error: %x != %x\n", ch, crc);
 			}
 			cprintf("got packet:");
 			for (ch=0; ch <bytes; ch++) {
-				cprintf(" %x", cmd[ch]);
+				cprintf(" %x", rs485_buf[ch]);
 			};
 			cprintf("\n");
-			state = IDLE;
+			if (rs485_buf[0] & 128)
+				rs485_cmd_len = 0;
+
+			rs485_state = RS485_STATE_IDLE;
+			timeout = 0;
 	};
 }
+
 
 void
 do_sendcmd(void) {
 	int8_t i, a;
-	int8_t cmd[8];
 	char *arg;
+	static uint8_t cmd[16];
 
 	i = 1;
 	a = 0;
@@ -130,14 +183,11 @@ do_sendcmd(void) {
 		i++;
 		a++;
 	};
+	rs485_sendcmd(cmd, a);
+}
 
-	rs485_putc(0xd5);
-	rs485_putc(a);
-	crc = 0;
-	for (i=0; i < a; i++) {
-		rs485_putc(cmd[i]);
-		update_crc(cmd[i]);
-	};
-
-	rs485_putc(crc);
+void rs485_sendcmd(uint8_t *buf, int8_t len) {
+	rs485_cmd = buf;
+	rs485_cmd_len = len;
+	rs485_cmd_retries = 5;
 }
