@@ -50,7 +50,7 @@
 #define CMDLINE_MAX_COMMANDS 30
 #define CMDLINE_MAX_CMD_LENGTH 50
 #define CMDLINE_BUFFERSIZE 50
-#define CMDLINE_HISTORYSIZE 5
+#define CMDLINE_HISTORYSIZE 1
 
 /* long strtol(const char * nptr, char ** endptr, int base); */
 

@@ -24,20 +24,53 @@ static int8_t step_state[4] = { STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_IDLE};
 int buf_used;
 int buf_idx;
 int eof = 0;
+int preread_ready = 0;
+uint8_t command_buf[512];
 
-uint8_t pop8() {
+uint16_t ms1, ms2;
+uint16_t ms_max = 0;
+
+uint8_t pop8_with_preread(uint8_t preread) {
 	if (eof) return 0;
 
 	if (buf_idx >= buf_used) {
-		buf_used = readfile();
-		buf_idx = 0;
+		if (preread_ready) {
+			if (preread_ready > 0) {
+				buf_used = preread_ready;
+				preread_ready = 0;
+			} else {
+				buf_used = 0;
+			};
+		} else {
+			buf_used = readfile();
+		};
+
 		if (buf_used <= 0) {
 			eof = 1;
 			return 0;
+		} else {
+			memcpy(command_buf, buf, 512);
+		};
+		buf_idx = 0;
+	};
+
+	if (preread && (preread_ready == 0)) {
+		ms1 = CLOCK_MS;
+		preread_ready = readfile();
+		ms2 = CLOCK_MS;
+		if (ms2 - ms1 > ms_max) {
+			ms_max = ms2 - ms1;
+			cprintf("read time: %d\n", ms_max);
+		};
+		if (preread_ready == 0) {
+			preread_ready = -1;
 		};
 	};
-	return buf[buf_idx++];
+		
+	return command_buf[buf_idx++];
 };
+
+#define pop8() pop8_with_preread(0)
 
 int16_t pop16() {
 	union {
@@ -138,7 +171,7 @@ void
 do_build(void) {
 	int16_t rc;
 	char fname[20];
-	uint8_t cmd, tool_or_platform = 0;
+	uint8_t i, cmd, tool_or_platform = 0;
 	uint8_t prev_cmd=0, wait, ch;
 	int16_t feedrate;
 	int32_t time, x, y, z, a, b, cmd_n, cmd_time;
@@ -150,6 +183,7 @@ do_build(void) {
 	buf_used = 0;
 	buf_idx = 0;
 	eof = 0;
+	preread_ready = 0;
 
 	rc = opendisk();
 	if (rc) return;
@@ -182,6 +216,10 @@ do_build(void) {
 	cmd_time = 0;
 
 	while (1) {
+		cmd = pop8_with_preread(1);
+		if (eof)
+			break;
+
 		wait = 1;
 		while (wait) {
 			if (getc_nowait(&ch)) {
@@ -266,8 +304,8 @@ do_build(void) {
 					break;
 				case BUILD_STATE_WAIT_STEP:
 					wait = 0;
-					for (cmd = 0; cmd<4; cmd++) {
-						if ((step_state[cmd] == STATE_IDLE) || (step_state[cmd] == STATE_IDLE_ON_STOP))
+					for (i = 0; i<4; i++) {
+						if ((step_state[i] == STATE_IDLE) || (step_state[i] == STATE_IDLE_ON_STOP))
 							continue;
 						wait = 1;
 					}
@@ -280,9 +318,6 @@ do_build(void) {
 					break;
 			};
 		};
-		cmd = pop8();
-		if (eof)
-			break;
 
 		if ((prev_cmd == 142) && (cmd != 142)) {
 			cprintf("\n");
