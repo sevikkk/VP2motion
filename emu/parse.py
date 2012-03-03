@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import math
+import struct
 
 AXES = ["X", "Y", "Z"]
 
@@ -34,7 +35,7 @@ class Segment:
 
 class Head:
 
-    def __init__(self):
+    def __init__(self, outfile):
         self.extruder_speed = 0
         self.extruder_state = 0
 
@@ -44,6 +45,7 @@ class Head:
         self.last_pos = {}
         self.thread = []
         self.segments = []
+        self.outfile = outfile
 
     def extruder_start(self):
         self.stop()
@@ -61,43 +63,81 @@ class Head:
         self.extruder_speed = speed
 
     def set_tool_temp(self, temp):
-        pass
+        self.outfile.write(struct.pack("<BBBBH", 136, 0, 3, 2, temp))
 
     def set_platform_temp(self, temp):
-        pass
+        self.outfile.write(struct.pack("<BBBBH", 136, 0, 31, 2, temp))
+        if temp > 0:
+            self.outfile.write(struct.pack("BBBBB", 136, 0, 10, 1, 3))
+        else:
+            self.outfile.write(struct.pack("BBBBB", 136, 0, 10, 1, 2))
+        self.outfile.write(struct.pack("BBBBB", 136, 0, 4, 1, 255))
 
     def wait_tool(self):
         self.stop()
+        self.outfile.write(struct.pack("<BB", 134, 0))
+        self.outfile.write(struct.pack("<BBHh", 135, 0, 100, -1))
+        self.outfile.write(struct.pack("<BBHh", 141, 0, 100, -1))
 
     def enable(self):
         self.stop()
+        self.outfile.write(struct.pack("BB", 137, 0x9f))
         self.last_pos = {}
 
     def disable(self):
         self.stop()
+        self.outfile.write(struct.pack("BB", 137, 0x1f))
         self.last_pos = {}
 
     def abp_on(self):
         self.stop()
+        self.outfile.write(struct.pack("BBBBB", 136, 0, 27, 1, 1))
 
     def abp_off(self):
         self.stop()
+        self.outfile.write(struct.pack("BBBBB", 136, 0, 27, 1, 0))
 
     def pause(self, pause):
         self.stop()
+        self.outfile.write(struct.pack("<BI", 133, pause*1000))
 
     def home(self, axes, direction, feed):
         self.stop()
+        if direction == "min":
+            cmd = 131
+        else:
+            cmd = 132
+        axes_code = 0
+        if "X" in axes:
+            axes_code |= 1
+        if "Y" in axes:
+            axes_code |= 2
+        if "Z" in axes:
+            axes_code |= 4
+        self.outfile.write(struct.pack("<BBIH", cmd, axes_code, 1000000/(feed * 3200.0/60), 20))
         self.last_pos = {}
         self.last_feed = feed
 
     def recall(self, axes):
         self.stop()
+        axes_code = 0
+        if "X" in axes:
+            axes_code |= 1
+        if "Y" in axes:
+            axes_code |= 2
+        if "Z" in axes:
+            axes_code |= 4
+        self.outfile.write(struct.pack("<BB", 144, axes_code))
         self.last_pos = {}
 
     def set_pos(self, axes):
         self.stop()
-        self.last_pos = {}
+        axes_vals = {}
+        self.last_pos = {"X": 0, "Y": 0, "Z": 0}
+        for k, v in axes:
+            axes_vals[k] = v * 3200
+            self.last_pos[k] = v
+        self.outfile.write(struct.pack("<Biiiii", 140, axes_vals.get("X", 0), axes_vals.get("Y", 0), axes_vals.get("Z", 0), 0, 0))
 
     def split_thread(self):
         self.segments = []
@@ -394,8 +434,9 @@ class Head:
             if sub_seg_dt > 0.040:
                 segs.append((s.entry_point, sub_seg_de, sub_seg_dt))
                 print "%3d | [%8.3f %8.3f %8.3f] %8.6f %8.6f" % tuple([n] + s.entry_point + [ sub_seg_de, sub_seg_dt])
+                self.outfile.write(struct.pack("<BiiiiiIB", 142, s.entry_point[0]*3200, s.entry_point[1]*3200, s.entry_point[2]*3200, -int(sub_seg_de * 3200), 0, sub_seg_dt * 1000000, 8))
                 n += 1
-                sub_seg_de = 0
+                sub_seg_de -= int(sub_seg_de * 3200)/3200.0
                 sub_seg_dt = 0
 
             de2 = s.de * (1 - s.exit_part - s.entry_part)
@@ -405,8 +446,9 @@ class Head:
             if sub_seg_dt > 0.040:
                 segs.append((s.exit_point, sub_seg_de, sub_seg_dt))
                 print "%3d | [%8.3f %8.3f %8.3f] %8.6f %8.6f" % tuple([n] + s.exit_point + [ sub_seg_de, sub_seg_dt])
+                self.outfile.write(struct.pack("<BiiiiiIB", 142, s.exit_point[0]*3200, s.exit_point[1]*3200, s.exit_point[2]*3200, -int(sub_seg_de * 3200), 0, sub_seg_dt * 1000000, 8))
                 n += 1
-                sub_seg_de = 0
+                sub_seg_de -= int(sub_seg_de * 3200)/3200.0
                 sub_seg_dt = 0
 
         return segs
@@ -421,6 +463,13 @@ class Head:
         self.thread = []
 
     def dda_move(self, pos, feed):
+        axes_vals = {}
+        self.last_pos = {"X": 0, "Y": 0, "Z": 0}
+        for k, v in pos.items():
+            axes_vals[k] = v * 3200
+            self.last_pos[k] = v
+
+        self.outfile.write(struct.pack("<BiiiiiI", 139, axes_vals.get("X", 0), axes_vals.get("Y", 0), axes_vals.get("Z", 0), 0, 0, 1000000/(feed * 3200.0/60)))
         print "DDA move to", pos, "at", feed
 
     def move_to(self, axes, feed):
@@ -616,7 +665,9 @@ def parse(f, head):
 
 if __name__ == "__main__":
     import sys
-    head = Head()
+    of = open(sys.argv[2], "w")
+    head = Head(of)
     f = open(sys.argv[1], "r")
     parse(f, head)
     f.close()
+    of.close()

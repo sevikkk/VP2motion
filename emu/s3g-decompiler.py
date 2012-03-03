@@ -142,13 +142,10 @@ class Emu:
             self.state = "moving"
 
     def EOF(self):
-        prev = None
+        total = 0
         for s in self.path:
-            print s
-            continue
-            s.update_start(prev)
-            prev = s
-            print s.vx, s.vy, s.vz, s.va, s.vb
+            total += s.us or 0
+        print "Total:", total, total/1000000.0/3600
 
 emu = Emu()
 
