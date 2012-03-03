@@ -432,25 +432,36 @@ class Head:
             sub_seg_dt += s.entry_dt
             sub_seg_de += de1
             if sub_seg_dt > 0.040:
-                segs.append((s.entry_point, sub_seg_de, sub_seg_dt))
+                espeed = sub_seg_de/sub_seg_dt
+                segs.append((s.entry_point[0], s.entry_point[1], s.entry_point[2], sub_seg_de, espeed, sub_seg_dt))
                 print "%3d | [%8.3f %8.3f %8.3f] %8.6f %8.6f" % tuple([n] + s.entry_point + [ sub_seg_de, sub_seg_dt])
-                self.outfile.write(struct.pack("<BiiiiiIB", 142, s.entry_point[0]*3200, s.entry_point[1]*3200, s.entry_point[2]*3200, -int(sub_seg_de * 3200), 0, sub_seg_dt * 1000000, 8))
                 n += 1
                 sub_seg_de -= int(sub_seg_de * 3200)/3200.0
                 sub_seg_dt = 0
+                prev_espeed = espeed
 
             de2 = s.de * (1 - s.exit_part - s.entry_part)
             sub_seg_dt += s.dt
             sub_seg_de += de2
 
             if sub_seg_dt > 0.040:
-                segs.append((s.exit_point, sub_seg_de, sub_seg_dt))
+                espeed = sub_seg_de/sub_seg_dt
+                segs.append((s.exit_point[0], s.exit_point[1], s.exit_point[2], sub_seg_de, espeed, sub_seg_dt))
                 print "%3d | [%8.3f %8.3f %8.3f] %8.6f %8.6f" % tuple([n] + s.exit_point + [ sub_seg_de, sub_seg_dt])
-                self.outfile.write(struct.pack("<BiiiiiIB", 142, s.exit_point[0]*3200, s.exit_point[1]*3200, s.exit_point[2]*3200, -int(sub_seg_de * 3200), 0, sub_seg_dt * 1000000, 8))
                 n += 1
                 sub_seg_de -= int(sub_seg_de * 3200)/3200.0
                 sub_seg_dt = 0
+                prev_espeed = espeed
 
+        prev_s = segs[0]
+        for s in segs[1:]:
+            x, y, z, de, ds, dt = prev_s
+            _, _, _, _,  ns, _ = s
+            de += (ns - ds) * 0.3
+            self.outfile.write(struct.pack("<BiiiiiIB", 142, x*3200, y*3200, z*3200, -int(de * 3200), 0, dt * 1000000, 8))
+            prev_s = s
+        x, y, z, de, ds, dt = prev_s
+        self.outfile.write(struct.pack("<BiiiiiIB", 142, x*3200, y*3200, z*3200, -int(de * 3200), 0, dt * 1000000, 8))
         return segs
 
     def stop(self):
