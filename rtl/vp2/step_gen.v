@@ -50,7 +50,7 @@ wire [31:0] max_accel;
 wire [31:0] max_velocity;
 
 assign max_accel = 200;
-assign max_velocity = 2100000;
+assign max_velocity = 4200000;
 
 always @(reset or cur_velocity or cycle or set_position or target_velocity)
 	begin
@@ -187,16 +187,16 @@ always @(posedge clk)
 			 if (do_step)
 				begin
 					dir <= next_dir;
-					step_cnt <= 500;
+					step_cnt <= 300;
 				end
 			end
 		else
 			begin
-				if (step_cnt == 400)
+				if (step_cnt == 250)
 					begin
 						step <= 1;
 					end
-				else if (step_cnt == 100)
+				else if (step_cnt == 50)
 					begin
 						step <= 0;
 					end

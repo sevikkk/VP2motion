@@ -6,7 +6,8 @@ AXES = ["X", "Y", "Z"]
 
 class Segment:
     max_v = [15.0, 15.0, 5.0]
-    max_a = [73.0, 73.0, 10.0]
+    max_v = [20.0, 20.0, 5.0]
+    max_a = [50.0, 50.0, 10.0]
     max_delta = 0.5
 
     def __init__(self, prev_seg, next_point):
@@ -431,7 +432,7 @@ class Head:
             de1 = s.prev_seg.de * s.prev_seg.exit_part + s.de * s.entry_part
             sub_seg_dt += s.entry_dt
             sub_seg_de += de1
-            if sub_seg_dt > 0.040:
+            if sub_seg_dt > 0.020:
                 espeed = sub_seg_de/sub_seg_dt
                 segs.append((s.entry_point[0], s.entry_point[1], s.entry_point[2], sub_seg_de, espeed, sub_seg_dt))
                 print "%3d | [%8.3f %8.3f %8.3f] %8.6f %8.6f" % tuple([n] + s.entry_point + [ sub_seg_de, sub_seg_dt])
@@ -444,7 +445,7 @@ class Head:
             sub_seg_dt += s.dt
             sub_seg_de += de2
 
-            if sub_seg_dt > 0.040:
+            if sub_seg_dt > 0.020:
                 espeed = sub_seg_de/sub_seg_dt
                 segs.append((s.exit_point[0], s.exit_point[1], s.exit_point[2], sub_seg_de, espeed, sub_seg_dt))
                 print "%3d | [%8.3f %8.3f %8.3f] %8.6f %8.6f" % tuple([n] + s.exit_point + [ sub_seg_de, sub_seg_dt])
