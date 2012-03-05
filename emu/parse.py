@@ -154,10 +154,23 @@ class Head:
                 self.segments.append(s)
                 s.de = 0
                 prev_seg = s
+                dx = 0
+                dy = 0
+                dz = 0
             else:
                 dx = pos["X"] - prev_seg.pos["X"]
                 dy = pos["Y"] - prev_seg.pos["Y"]
                 dz = pos["Z"] - prev_seg.pos["Z"]
+                if (
+                        (dx * prev_dx < 0) or
+                        (dy * prev_dy < 0) or
+                        (dz * prev_dz < 0)
+                        ):
+                    print "inserting empty segment for reversing"
+                    s = Segment(prev_seg, (prev_seg.pos, feed, espeed))
+                    self.segments.append(s)
+                    s.de = 0
+                    prev_seg = s
 
                 total = math.sqrt(dx*dx + dy*dy + dz*dz)
 
@@ -195,6 +208,9 @@ class Head:
                     self.segments.append(s)
                     prev_seg = s
             prev_pos = pos
+            prev_dx = dx
+            prev_dy = dy
+            prev_dz = dz
 
         self.segments.append(Segment(prev_seg, (pos, 0, 0)))
         self.segments[-1].de = 0
@@ -267,9 +283,7 @@ class Head:
 
                 d = (d1 + d2)/4
 
-                if sv * ev < 0:
-                    ev = 0 
-                    d = d1/2
+                assert sv * ev >= 0
 
                 if d > s.max_delta:
                     d = s.max_delta
@@ -312,9 +326,7 @@ class Head:
 
                 d = (d1 + d2)/4
 
-                if sv * ev < 0:
-                    ev = 0 
-                    d = d2/2
+                assert sv * ev >= 0
 
                 if d > s.max_delta:
                     d = s.max_delta
@@ -360,10 +372,8 @@ class Head:
                 if d1 + d2 <0.01:
                     continue
 
-                if v1 * v2 < 0:
-                    dist = (v2*v2 + v1*v1)/(2.0*max_a)
-                else:
-                    dist = abs(v2*v2 - v1*v1)/(2.0*max_a)
+                assert v1 * v2 >= 0
+                dist = abs(v2*v2 - v1*v1)/(2.0*max_a)
 
                 dt = abs(v1 - v2)/max_a
 
@@ -391,9 +401,9 @@ class Head:
                 s.exit_point[a] = s.pos[["X", "Y", "Z"][a]] - s.d[a] * s.exit_part
             s.dt = dt
 
-            #print "%3d [%8.3f %8.3f %8.3f] [%8.3f %8.3f %8.3f] [%8.3f %8.3f %8.3f] %.3f %.3f %.3f" % tuple([n] + start_v + target_v + end_v + [ s.entry_part, 1 - s.entry_part - s.exit_part, s.exit_part ])
             d = math.sqrt( s.d[0] * s.d[0] + s.d[1] * s.d[1] + s.d[2] * s.d[2] )
             if (s.entry_part + s.exit_part > 1) or (d*s.entry_part > s.max_delta) or (d * s.exit_part > s.max_delta):
+                print "bad %3d [%8.3f %8.3f %8.3f] [%8.3f %8.3f %8.3f] [%8.3f %8.3f %8.3f] %.3f %.3f %.3f" % tuple([n] + start_v + target_v + end_v + [ s.entry_part, 1 - s.entry_part - s.exit_part, s.exit_part ])
                 bad[s] = 1
                 bad[s.prev_seg] = 1
                 bad[s.next_seg] = 1
