@@ -12,3 +12,5 @@ soft/vp2_cli - software running on embedded processor. It has commandline
 emu/parse.py - host-based g-code interpreter, path planning, synchronized
           acceleration profiles and output to makerbot compatible .s3g files.
 
+Some photos from this project:
+  https://picasaweb.google.com/114257244810512271993/3dMf70
