@@ -9,3 +9,7 @@ soft/vp2_cli - software running on embedded processor. It has commandline
 
 emu/parse.py - host-based g-code interpreter, path planning, synchronized
           acceleration profiles and output to makerbot compatible .s3g files.
+
+
+This is used on my Proxxon MF70 + MakerBot MK7 CNC-mill based repstrap.
+
