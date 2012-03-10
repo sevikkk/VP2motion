@@ -14,3 +14,6 @@ emu/parse.py - host-based g-code interpreter, path planning, synchronized
 
 Some photos from this project:
   https://picasaweb.google.com/114257244810512271993/3dMf70
+
+New printer using this electronics (in progress):
+  https://picasaweb.google.com/114257244810512271993/Monsterap
