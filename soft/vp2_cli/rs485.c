@@ -62,6 +62,7 @@ int8_t rs485_buf_used = 0;
 uint8_t *rs485_cmd;
 int8_t rs485_cmd_len = 0;
 int8_t rs485_cmd_retries = 0;
+int8_t rs485_cmd_verbose = 0;
 
 int8_t rs485_state = RS485_STATE_IDLE;
 int16_t timeout = 0;
@@ -153,11 +154,14 @@ rs485MainLoop(void) {
 			if (crc != ch) {
 				cprintf("crc error: %x != %x\n", ch, crc);
 			}
-			/* cprintf("got packet:");
-			for (ch=0; ch <bytes; ch++) {
-				cprintf(" %x", rs485_buf[ch]);
+			if (rs485_cmd_verbose) {
+				cprintf("got packet:");
+				for (ch=0; ch <bytes; ch++) {
+					cprintf(" %x", rs485_buf[ch]);
+				};
+				cprintf("\n");
 			};
-			cprintf("\n"); */
+			rs485_cmd_verbose = 0;
 			if (rs485_buf[0] & 128)
 				rs485_cmd_len = 0;
 
@@ -184,10 +188,12 @@ do_sendcmd(void) {
 		a++;
 	};
 	rs485_sendcmd(cmd, a);
+	rs485_cmd_verbose = 1;
 }
 
 void rs485_sendcmd(uint8_t *buf, int8_t len) {
 	rs485_cmd = buf;
 	rs485_cmd_len = len;
 	rs485_cmd_retries = 5;
+	rs485_cmd_verbose = 0;
 }
