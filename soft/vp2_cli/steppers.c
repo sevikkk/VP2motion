@@ -451,7 +451,7 @@ do_build(void) {
 					STEPPERS_SET_GEN = STEPPERS_SET_Y_SET_POS;
 				};
 				if (cmd & 4) {
-					STEPPERS_REG32(0) = 213900L;
+					STEPPERS_REG32(0) = 239600L;
 					STEPPERS_SET_GEN = STEPPERS_SET_Z_SET_POS;
 				};
 				if (cmd & 8) {
