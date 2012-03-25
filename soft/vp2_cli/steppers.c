@@ -443,15 +443,15 @@ do_build(void) {
 				cprintf("Recall home on axes: %d %d %d %d %d\n", cmd&1, cmd&2, cmd&4, cmd&8, cmd&16);
 				STEPPERS_OUT_SELECT1 = 0;
 				if (cmd & 1) {
-					STEPPERS_REG32(0) = -193000L;
+					STEPPERS_REG32(0) = -388835L/2;
 					STEPPERS_SET_GEN = STEPPERS_SET_X_SET_POS;
 				};
 				if (cmd & 2) {
-					STEPPERS_REG32(0) = 110000L;
+					STEPPERS_REG32(0) = 285600L/2;
 					STEPPERS_SET_GEN = STEPPERS_SET_Y_SET_POS;
 				};
 				if (cmd & 4) {
-					STEPPERS_REG32(0) = 239600L;
+					STEPPERS_REG32(0) = 238240L;
 					STEPPERS_SET_GEN = STEPPERS_SET_Z_SET_POS;
 				};
 				if (cmd & 8) {
