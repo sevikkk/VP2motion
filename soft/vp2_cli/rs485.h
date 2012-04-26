@@ -15,5 +15,6 @@ extern int8_t rs485_state;
 extern uint8_t rs485_buf[RS485_BUF_SIZE];
 extern int8_t rs485_buf_used;
 extern int8_t rs485_cmd_len;
+extern int8_t rs485_cmd_verbose;
 
 

@@ -283,12 +283,30 @@ do_build(void) {
 				case BUILD_STATE_WAIT_TOOL_READY:
 					if (rs485_state == RS485_STATE_IDLE) {
 						if ((rs485_cmd_len == 0) && (rs485_buf_used > 0) && (rs485_buf[0] == 0x81)) {
-							if (rs485_buf[1] == 1) {
-								wait = 0;
-								state = BUILD_STATE_NONE;
-							} else {
+							if (cmd_buf[1] == 30 || cmd_buf[1] == 2) {
+								cprintf("\b\b\b\b\b\b\b\b %4dC ", (int)(rs485_buf[1]) + ((int)(rs485_buf[2]))*256);
 								state = BUILD_STATE_WAIT_TOOL_RETRY;
 								delay = CLOCK_MS;
+								if (cmd_buf[1] == 30) {
+									cmd_buf[1] = 35;
+								} else {
+									cmd_buf[1] = 22;
+								};
+							} else {
+								if (rs485_buf[1] == 1) {
+									cprintf(" done\n");
+									wait = 0;
+									state = BUILD_STATE_NONE;
+								} else {
+									cprintf(".");
+									state = BUILD_STATE_WAIT_TOOL_RETRY;
+									delay = CLOCK_MS;
+									if (cmd_buf[1] == 35) {
+										cmd_buf[1] = 30;
+									} else {
+										cmd_buf[1] = 2;
+									};
+								};
 							};
 						} else {
 							cprintf("tool command error, aborting\n");
@@ -366,18 +384,18 @@ do_build(void) {
 				cmd_buf[0] = 0;
 				if (cmd == 135) {
 					dir = "tool";
-					cmd_buf[1] = 22;
+					cmd_buf[1] = 2;
 				} else {
 					dir = "platform";
-					cmd_buf[1] = 35;
+					cmd_buf[1] = 30;
 				};
-				rs485_sendcmd(cmd_buf, 2);
-				state = BUILD_STATE_WAIT_TOOL_READY;
 
 				cmd = pop8();
 				feedrate = pop16();
 				time = pop16();
-				cprintf("Wait for %s %d for %ds\n", dir, cmd, time);
+				cprintf("Wait for %s %d for %ds...       ", dir, cmd, time);
+				rs485_sendcmd(cmd_buf, 2);
+				state = BUILD_STATE_WAIT_TOOL_READY;
 				break;
 			case 136:
 				parse_tool();
@@ -451,7 +469,7 @@ do_build(void) {
 					STEPPERS_SET_GEN = STEPPERS_SET_Y_SET_POS;
 				};
 				if (cmd & 4) {
-					STEPPERS_REG32(0) = 238240L;
+					STEPPERS_REG32(0) = 234220L;
 					STEPPERS_SET_GEN = STEPPERS_SET_Z_SET_POS;
 				};
 				if (cmd & 8) {

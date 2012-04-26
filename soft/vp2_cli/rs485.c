@@ -106,7 +106,7 @@ rs485MainLoop(void) {
 			default:
 				if (timeout > 0) {
 					if ((int16_t)(CLOCK_MS - timeout) > 1000) {
-						cprintf("rs485 timeout: %d %d %d\n", CLOCK_MS, timeout, (int16_t)(CLOCK_MS - timeout));
+						cprintf("rs485 timeout: %d %d %d cmd: %d %d\n", CLOCK_MS, timeout, (int16_t)(CLOCK_MS - timeout), rs485_cmd[0], rs485_cmd[1]);
 						if (rs485_cmd_len > 0) {
 							rs485_state = RS485_STATE_RETRY;
 						} else {
