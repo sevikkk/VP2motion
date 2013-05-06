@@ -173,7 +173,7 @@ do_build(void) {
 	char fname[20];
 	uint8_t i, cmd, tool_or_platform = 0;
 	uint8_t prev_cmd=0, wait, ch;
-	int16_t feedrate;
+	int16_t dda;
 	int32_t time, x, y, z, a, b, cmd_n, cmd_time;
 	char *dir;
 	int8_t abort_state = 0;
@@ -355,29 +355,29 @@ do_build(void) {
 				};
 
 				cmd = pop8();
-				feedrate = pop16();
+				dda = pop16();
 				time = pop32();
-				cprintf("Home %s on axes: %d %d %d %d %d with feed: %d timeout: %ld\n", dir, cmd&1, cmd&2, cmd&4, cmd&8, cmd&16, feedrate, time);
+				cprintf("Home %s on axes: %d %d %d %d %d with dda: %d timeout: %ld\n", dir, cmd&1, cmd&2, cmd&4, cmd&8, cmd&16, dda, time);
 				if (cmd & 1) {
-					steppers_move_to(0, -400000l, 200000l * feedrate * 50, 1);
+					steppers_move_to(0, 100000l, 100000l * (dda > 800?800:dda) * 50, 1);
 					state = BUILD_STATE_WAIT_STEP;
 				};
 				if (cmd & 2) {
-					steppers_move_to(1, 250000l, 200000l * feedrate * 50, 1);
+					steppers_move_to(1, 100000l, 100000l * (dda>800?800:dda) * 50, 1);
 					state = BUILD_STATE_WAIT_STEP;
 				};
 				if (cmd & 4) {
-					steppers_move_to(2, 250000l, 200000l * feedrate * 50, 1);
+					steppers_move_to(2, 500000l, 500000l * (dda>150?150:dda) * 50, 1);
 					state = BUILD_STATE_WAIT_STEP;
 				};
 				break;
 			case 133:
 				time = pop32();
-				cprintf("Wait for %ld\n", time);
+				cprintf("Wait for %ld, ignored\n", time);
 				break;
 			case 134:
 				cmd = pop8();
-				cprintf("Switch to tool %d\n", cmd);
+				cprintf("Switch to tool %d, ignored\n", cmd);
 				break;
 			case 135:
 			case 141:
@@ -391,7 +391,7 @@ do_build(void) {
 				};
 
 				cmd = pop8();
-				feedrate = pop16();
+				dda = pop16();
 				time = pop16();
 				cprintf("Wait for %s %d for %ds...       ", dir, cmd, time);
 				rs485_sendcmd(cmd_buf, 2);
@@ -416,7 +416,7 @@ do_build(void) {
 				a = pop32();
 				b = pop32();
 				time = pop32();
-				cprintf("Abs move to: %ld %ld %ld %ld %ld at dda %ld\n", x, y, z, a, b, time);
+				cprintf("Abs move to: %ld %ld %ld %ld %ld at dda %ld uS\n", x, y, z, a, b, time);
 				steppers_move_to(0, x, 200000L * 50 * time, 0);
 				steppers_move_to(1, y, 200000L * 50 * time, 0);
 				steppers_move_to(2, z, 200000L * 50 * time, 0);
@@ -461,15 +461,15 @@ do_build(void) {
 				cprintf("Recall home on axes: %d %d %d %d %d\n", cmd&1, cmd&2, cmd&4, cmd&8, cmd&16);
 				STEPPERS_OUT_SELECT1 = 0;
 				if (cmd & 1) {
-					STEPPERS_REG32(0) = -388835L/2;
+					STEPPERS_REG32(0) = 9927L;
 					STEPPERS_SET_GEN = STEPPERS_SET_X_SET_POS;
 				};
 				if (cmd & 2) {
-					STEPPERS_REG32(0) = 285600L/2;
+					STEPPERS_REG32(0) = 16080L;
 					STEPPERS_SET_GEN = STEPPERS_SET_Y_SET_POS;
 				};
 				if (cmd & 4) {
-					STEPPERS_REG32(0) = 234220L;
+					STEPPERS_REG32(0) = 737015L;
 					STEPPERS_SET_GEN = STEPPERS_SET_Z_SET_POS;
 				};
 				if (cmd & 8) {
@@ -661,7 +661,7 @@ static int8_t done_mask[4] = {
 #define END_MIN 0
 #define END_MAX 1
 #define END_NONE 2
-static int8_t ends_dir[4] = { END_MIN, END_MAX, END_MAX, END_NONE };
+static int8_t ends_dir[4] = { END_MAX, END_MAX, END_MAX, END_NONE };
 
 #if 0
 static int32_t max_speed[4] = { 20 * 3200, 20*3200, 5*3200, 5*3200 };
@@ -669,7 +669,7 @@ static int32_t max_speed[4] = { 20 * 3200, 20*3200, 5*3200, 5*3200 };
 
 void steppers_brake(uint8_t axis) {
 	cprintf("axis %d: braking\n", axis);
-	steppers_move_to(axis, 0L, 5000000L, 1);
+	steppers_move_to(axis, 0L, 5000000L, 2);
 	step_state[axis] = STATE_BRAKING;
 };
 
@@ -691,6 +691,9 @@ int8_t steppers_move_to(uint8_t axis, int32_t target_position, uint32_t target_t
 		cur_position = STEPPERS_REG32(0);
 	};
 
+	if (relative != 2 && (target_position == cur_position))
+		return 0;
+
 	to_end = 0;
 	if (ends_dir[axis] == END_MIN) {
 		if (target_position < cur_position) to_end = 1;
@@ -699,7 +702,8 @@ int8_t steppers_move_to(uint8_t axis, int32_t target_position, uint32_t target_t
 	};
 
 	if (ends && to_end) {
-		steppers_brake(axis);
+		if (step_state[axis] != STATE_IDLE_ON_STOP)
+			steppers_brake(axis);
 		return 0;
 	} else if (to_end){
 		step_state[axis] = STATE_MOVING_TO;

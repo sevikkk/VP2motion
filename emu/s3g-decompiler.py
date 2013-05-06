@@ -106,7 +106,7 @@ class Segment:
 
 class Emu:
     def __init__(self):
-        self.state = "init"
+        self.state = "moving"
         self.last = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.path = []
 

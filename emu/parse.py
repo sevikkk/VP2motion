@@ -3,11 +3,12 @@ import math
 import struct
 
 AXES = ["X", "Y", "Z"]
+AXES_STEPS = [79.64, 79.64, 2560.0]
+A_STEPS = 3200.0
 
 class Segment:
-    max_v = [15.0, 15.0, 5.0]
-    max_v = [20.0, 20.0, 5.0]
-    max_a = [50.0, 50.0, 10.0]
+    max_v = [250.0, 250.0, 25.0]
+    max_a = [1500.0, 1500.0, 5.0]
     max_delta = 0.5
 
     def __init__(self, prev_seg, next_point):
@@ -111,34 +112,36 @@ class Head:
         axes_code = 0
         if "X" in axes:
             axes_code |= 1
+            steps = AXES_STEPS[0]
         if "Y" in axes:
             axes_code |= 2
+            steps = AXES_STEPS[1]
         if "Z" in axes:
             axes_code |= 4
-        self.outfile.write(struct.pack("<BBIH", cmd, axes_code, 1000000/(feed * 3200.0/60), 20))
+            steps = AXES_STEPS[2]
+        self.outfile.write(struct.pack("<BBIH", cmd, axes_code, 1000000/(feed * steps/60), 20))
         self.last_pos = {}
         self.last_feed = feed
 
     def recall(self, axes):
-        self.stop()
-        axes_code = 0
+        axes_pos = {}
         if "X" in axes:
-            axes_code |= 1
+            axes_pos["X"] = (8450)/AXES_STEPS[0]
         if "Y" in axes:
-            axes_code |= 2
+            axes_pos["Y"] = (10600)/AXES_STEPS[1]
         if "Z" in axes:
-            axes_code |= 4
-        self.outfile.write(struct.pack("<BB", 144, axes_code))
-        self.last_pos = {}
+            axes_pos["Z"] = (770800)/AXES_STEPS[2] + 0.2
+
+        self.set_pos(axes_pos.items())
 
     def set_pos(self, axes):
         self.stop()
         axes_vals = {}
         self.last_pos = {"X": 0, "Y": 0, "Z": 0}
         for k, v in axes:
-            axes_vals[k] = v * 3200
+            axes_vals[k] = v
             self.last_pos[k] = v
-        self.outfile.write(struct.pack("<Biiiii", 140, axes_vals.get("X", 0), axes_vals.get("Y", 0), axes_vals.get("Z", 0), 0, 0))
+        self.outfile.write(struct.pack("<Biiiii", 140, axes_vals.get("X", 0) * AXES_STEPS[0], axes_vals.get("Y", 0) * AXES_STEPS[1], axes_vals.get("Z", 0) * AXES_STEPS[2], 0, 0))
 
     def split_thread(self):
         self.segments = []
@@ -146,31 +149,18 @@ class Head:
         prev_pos = None
         for t in self.thread:
             pos, feed, espeed = t
-            feed *= 10
-            espeed *= 10
+            #feed *= 10
+            #espeed *= 10
             #print "splitting:", prev_pos, pos
             if not prev_seg:
                 s = Segment(prev_seg, t)
                 self.segments.append(s)
                 s.de = 0
                 prev_seg = s
-                dx = 0
-                dy = 0
-                dz = 0
             else:
                 dx = pos["X"] - prev_seg.pos["X"]
                 dy = pos["Y"] - prev_seg.pos["Y"]
                 dz = pos["Z"] - prev_seg.pos["Z"]
-                if (
-                        (dx * prev_dx < 0) or
-                        (dy * prev_dy < 0) or
-                        (dz * prev_dz < 0)
-                        ):
-                    print "inserting empty segment for reversing"
-                    s = Segment(prev_seg, (prev_seg.pos, feed, espeed))
-                    self.segments.append(s)
-                    s.de = 0
-                    prev_seg = s
 
                 total = math.sqrt(dx*dx + dy*dy + dz*dz)
 
@@ -178,7 +168,7 @@ class Head:
                 k = seg_size/total
                 de = total / feed * espeed
 
-                num_segs = min(5, int((total/seg_size)/2))
+                num_segs = min(10, int((total/seg_size)/2))
                 #print k, seg_size, num_segs
 
                 last_pos = prev_pos
@@ -208,9 +198,6 @@ class Head:
                     self.segments.append(s)
                     prev_seg = s
             prev_pos = pos
-            prev_dx = dx
-            prev_dy = dy
-            prev_dz = dz
 
         self.segments.append(Segment(prev_seg, (pos, 0, 0)))
         self.segments[-1].de = 0
@@ -283,7 +270,9 @@ class Head:
 
                 d = (d1 + d2)/4
 
-                assert sv * ev >= 0
+                if sv * ev < 0:
+                    ev = 0 
+                    d = d1/2
 
                 if d > s.max_delta:
                     d = s.max_delta
@@ -326,7 +315,9 @@ class Head:
 
                 d = (d1 + d2)/4
 
-                assert sv * ev >= 0
+                if sv * ev < 0:
+                    ev = 0 
+                    d = d2/2
 
                 if d > s.max_delta:
                     d = s.max_delta
@@ -372,8 +363,10 @@ class Head:
                 if d1 + d2 <0.01:
                     continue
 
-                assert v1 * v2 >= 0
-                dist = abs(v2*v2 - v1*v1)/(2.0*max_a)
+                if v1 * v2 < 0:
+                    dist = (v2*v2 + v1*v1)/(2.0*max_a)
+                else:
+                    dist = abs(v2*v2 - v1*v1)/(2.0*max_a)
 
                 dt = abs(v1 - v2)/max_a
 
@@ -447,7 +440,7 @@ class Head:
                 segs.append((s.entry_point[0], s.entry_point[1], s.entry_point[2], sub_seg_de, espeed, sub_seg_dt))
                 print "%3d | [%8.3f %8.3f %8.3f] %8.6f %8.6f" % tuple([n] + s.entry_point + [ sub_seg_de, sub_seg_dt])
                 n += 1
-                sub_seg_de -= int(sub_seg_de * 3200)/3200.0
+                sub_seg_de -= int(sub_seg_de * A_STEPS)/A_STEPS
                 sub_seg_dt = 0
                 prev_espeed = espeed
 
@@ -460,19 +453,29 @@ class Head:
                 segs.append((s.exit_point[0], s.exit_point[1], s.exit_point[2], sub_seg_de, espeed, sub_seg_dt))
                 print "%3d | [%8.3f %8.3f %8.3f] %8.6f %8.6f" % tuple([n] + s.exit_point + [ sub_seg_de, sub_seg_dt])
                 n += 1
-                sub_seg_de -= int(sub_seg_de * 3200)/3200.0
+                sub_seg_de -= int(sub_seg_de * A_STEPS)/A_STEPS
                 sub_seg_dt = 0
                 prev_espeed = espeed
+
+        #if self.extruder_state:
+        #    self.outfile.write(struct.pack("<BiiiiiIB", 142, 0, 0, 0, -100, 0, 200000, 15))
 
         prev_s = segs[0]
         for s in segs[1:]:
             x, y, z, de, ds, dt = prev_s
             _, _, _, _,  ns, _ = s
-            de += (ns - ds) * 0.3
-            self.outfile.write(struct.pack("<BiiiiiIB", 142, x*3200, y*3200, z*3200, -int(de * 3200), 0, dt * 1000000, 8))
+            adv_steps = (ns - ds) * 10 # 0.3
+            adv_steps = 0
+            print "ADV STEPS:", int(adv_steps*3200), int(de*3200)
+            de += adv_steps
+            self.outfile.write(struct.pack("<BiiiiiIB", 142, x*AXES_STEPS[0], y*AXES_STEPS[1], z*AXES_STEPS[2], -int(de * A_STEPS), 0, dt * 1000000, 8))
             prev_s = s
         x, y, z, de, ds, dt = prev_s
-        self.outfile.write(struct.pack("<BiiiiiIB", 142, x*3200, y*3200, z*3200, -int(de * 3200), 0, dt * 1000000, 8))
+        self.outfile.write(struct.pack("<BiiiiiIB", 142, x*AXES_STEPS[0], y*AXES_STEPS[1], z*AXES_STEPS[2], -int(de * A_STEPS), 0, dt * 1000000, 8))
+
+        #if self.extruder_state:
+        #    self.outfile.write(struct.pack("<BiiiiiIB", 142, 0, 0, 0, 100, 0, 200000, 15))
+
         return segs
 
     def stop(self):
@@ -488,10 +491,10 @@ class Head:
         axes_vals = {}
         self.last_pos = {"X": 0, "Y": 0, "Z": 0}
         for k, v in pos.items():
-            axes_vals[k] = v * 3200
+            axes_vals[k] = v
             self.last_pos[k] = v
 
-        self.outfile.write(struct.pack("<BiiiiiI", 139, axes_vals.get("X", 0), axes_vals.get("Y", 0), axes_vals.get("Z", 0), 0, 0, 1000000/(feed * 3200.0/60)))
+        self.outfile.write(struct.pack("<BiiiiiI", 139, axes_vals.get("X", 0) * AXES_STEPS[0], axes_vals.get("Y", 0) * AXES_STEPS[1], axes_vals.get("Z", 0) * AXES_STEPS[2], 0, 0, 1000000/(feed * AXES_STEPS[0]/60)))
         print "DDA move to", pos, "at", feed
 
     def move_to(self, axes, feed):

@@ -132,33 +132,55 @@ ignore_data = [
 
 #ignore += ignore_data
 
+#ignore = ["IO_H17", "IO_AK29", # clocks
+#        ]
+
+ignore += [
+        "IO_G17",
+        "IO_F17",
+        "IO_L17",
+        "IO_K17",
+        "IO_E16",
+        "IO_E13",
+        ]
+
+nempty = 1
+buf = ""
 def got1(fd):
     global state
     global ignore
+    global nempty
+    global buf
     data = os.read(fd, 1000)
+    #sys.stdout.write(".")
+    #sys.stdout.flush()
     #print state, `data`
-    buf = ""
     if state == "init" and data.endswith("jtag> "):
         state = "banner"
-        pty._writen(fd, """cable DLC5 parallel 0x378\nbsdl path .\ndetect\npart 0\n""")
+        os.write(fd, """cable DLC5 parallel 0xa090\nbsdl path .\ndetect\npart 0\n""")
         return ""
     elif state == "banner" and data.endswith(".bsdl\r\n"):
         state = "prompt"
         buf = ""
     elif state == "prompt":
         buf += data
-        if data.endswith("jtag> "):
+        #if len(buf)>1:
+        #    sys.stdout.write(`buf`+"\r\n")
+        #    sys.stdout.flush()
+        if buf.endswith("jtag> "):
             buf = buf.split("\r\n")
             for s in buf:
                 if s == "jtag> ":
+                    continue
+                if s == "scan":
                     continue
                 pin = s.split(":")[0]
                 if pin in ignore:
                     continue
                 print s+"\r\n",
             #sys.stdout.write(`buf`)
-            #sys.stdout.flush()
-            pty._writen(fd, """scan\n""")
+            sys.stdout.flush()
+            os.write(fd, """scan\n""")
             buf = ""
 
     return ""
